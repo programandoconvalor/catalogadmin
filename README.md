@@ -255,4 +255,4 @@ Las funcionalidades disponibles y su configuración definitiva deben verificarse
 
 ---
 
-Desarrollado para la administración de catálogos digitales de **Admin Catálogo**.
+Desarrollado para la administración de catálogos digitales de **Admin Catálogo**. por Juan Carlos Zepeda
