@@ -1,149 +1,258 @@
-# Free Angular Tailwind Admin Dashboard Template - TailAdmin Angular
+# Admin Catálogo Admin Catálogo
 
-TailAdmin Angular is a **free and open-source admin dashboard template** built with **Angular** and **Tailwind CSS**. It provides developers with everything they need to create a feature-rich, data-driven **back-end, dashboard, or admin panel** for any type of web project.
+Panel de administración para gestionar los catálogos digitales de **Admin Catálogo**. La aplicación permite administrar productos, categorías, imágenes y zonas de entrega desde una interfaz web desarrollada con Angular, Tailwind CSS y Firebase.
 
-![TailAdmin Angular Admin Dashboard](./angular-tailwind.png)
+El proyecto está diseñado para mantener separados los catálogos Normal y VIP, facilitando la administración de sus productos, categorías y zonas de entrega.
 
-With TailAdmin Angular, you’ll get access to a complete set of **dashboard UI components, elements, and ready-to-use pages** to build a modern, high-quality admin panel. Whether it’s for a **complex web application** or a **lightweight project**, TailAdmin Angular is designed to speed up development of any kind of dashboards and admin panels.
+## Características principales
 
-TailAdmin leverages the **powerful ecosystem of Angular 20+**, along with **TypeScript** and the utility-first styling of **Tailwind CSS v4**. Combined, they make TailAdmin Angular a perfect foundation to launch your dashboard or admin panel quickly and effectively.
+### Gestión de productos
 
-TailAdmin Angular comes with essential UI components and layouts for building **feature-rich, data-driven dashboards** and **admin panels**. TailAdmin Angular is built on:
+- Crear, consultar, editar y eliminar productos.
+- Administrar códigos, SKU, nombres, descripciones y precios.
+- Organizar productos por categorías.
+- Configurar estados activo e inactivo.
+- Controlar la disponibilidad para venta.
+- Definir el orden de aparición de los productos.
+- Configurar presentaciones y precios individuales.
+- Administrar los elementos incluidos en cada producto.
+- Subir y actualizar imágenes de productos.
+- Buscar, filtrar y ordenar productos.
+- Visualizar productos en formato de tarjetas o lista.
 
-- **Angular 22+**
-- **TypeScript**
-- **Tailwind CSS v4**
+### Gestión de categorías
 
-### Quick Links
+- Crear, editar y eliminar categorías.
+- Configurar el nombre, estado y orden de aparición.
+- Mantener las categorías separadas por catálogo.
+- Administrar las categorías desde el panel correspondiente a cada catálogo.
 
-- ✨ [Visit Website](https://tailadmin.com/)
-- 🚀 [Angular Demo](https://angular-demo.tailadmin.com/)
-- 📄 [Documentation](https://tailadmin.com/docs)
-- ⬇️ [Download](https://tailadmin.com/download)
-- 🖌️ [Figma Design File (Free Edition)](https://www.figma.com/community/file/1463141366275764364)
-- ⚡ [Get PRO Version](https://tailadmin.com/pricing)
+### Gestión de zonas de entrega
 
----
+- Crear, consultar, editar y eliminar zonas de entrega.
+- Configurar nombre, estado y orden de aparición.
+- Mantener independientes las zonas de los catálogos Normal y VIP.
+- Identificar cada zona mediante `catalogId`.
+- Validar la pertenencia de una zona al catálogo antes de actualizarla o eliminarla.
+- Administrar las zonas sin un campo de descripción.
 
-## Feature Comparison
+**Importante:** las zonas de entrega de Catálogo Normal y Catálogo VIP son independientes. Los cambios realizados en un catálogo no deben modificar las zonas del otro.
 
-| Feature                        | Free Version                    | Pro Version 🌟                                                                                                    |
-| ------------------------------ | ------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Dashboards**                 | 1 Unique Dashboard              | 7 Unique Dashboards: Analytics, Ecommerce, Marketing, SaaS, CRM, Stocks, Logistics and more (more coming soon) 📈 |
-| **UI Elements and Components** | 100+ UI elements and components | Included in 500+ components and UI elements                                                                       |
-| **Design Files**               | Basic Figma design files        | Complete Figma design system file                                                                                 |
-| **Support**                    | Community support               | Email support                                                                                                     |
+### Administración de imágenes
 
-### Other Versions
+- Cargar imágenes desde el panel de administración.
+- Mostrar una vista previa antes de guardar.
+- Validar los archivos de imagen admitidos.
+- Mostrar el progreso de carga.
+- Almacenar las imágenes en Firebase Storage.
+- Guardar las referencias de las imágenes junto con los datos de los productos en Firestore.
 
-- [Next.js Version](https://github.com/TailAdmin/free-nextjs-admin-dashboard)
-- [React.js Version](https://github.com/TailAdmin/free-react-tailwind-admin-dashboard)
-- [Vue.js Version](https://github.com/TailAdmin/vue-tailwind-admin-dashboard)
-- [Angular Version](https://github.com/TailAdmin/free-angular-tailwind-dashboard)
-- [Laravel Version](https://github.com/TailAdmin/tailadmin-laravel)
+### Experiencia de usuario
 
-## Installation
+- Interfaz adaptable a dispositivos móviles y escritorio.
+- Formularios con validaciones.
+- Ventanas modales para crear y editar registros.
+- Confirmación antes de eliminar registros.
+- Notificaciones de éxito y error.
+- Indicadores de carga y guardado.
+- Navegación desde el panel administrativo.
 
-### Prerequisites
+## Tecnologías utilizadas
 
-Before you start, make sure you have:
+| Tecnología | Uso |
+|---|---|
+| Angular | Framework de la aplicación |
+| TypeScript | Lenguaje de programación |
+| Tailwind CSS | Estilos y diseño de la interfaz |
+| Firebase Authentication | Autenticación de usuarios |
+| Cloud Firestore | Almacenamiento de productos, categorías y zonas |
+| Firebase Storage | Almacenamiento de imágenes |
+| Angular Reactive Forms | Formularios y validaciones |
+| Git y GitHub | Control de versiones y repositorio |
 
-- **Node.js 20.x or later** (Node.js 20.x recommended)
-- **Angular CLI** installed globally:
+## Arquitectura de datos
 
-```bash
-npm install -g @angular/cli
+La aplicación utiliza una estructura organizada por tenant y catálogo.
+
+La estructura de Firestore contempla las siguientes rutas:
+
+```text
+tenants/
+└── cielitodeflores/
+    ├── categories/
+    ├── catalogs/
+    │   ├── normal/
+    │   │   └── items/
+    │   └── vip/
+    │       └── items/
+    └── deliveryZones/
 ```
 
----
+Las categorías se identifican mediante `catalogId` para separar Normal y VIP. Las zonas de entrega también utilizan `catalogId` para distinguir a qué catálogo pertenece cada registro.
 
-### Cloning the Repository
+La colección de zonas puede ser compartida a nivel de tenant, pero las consultas y operaciones deben respetar el catálogo correspondiente.
 
-Clone the repository:
+## Catálogos
+
+- **Catálogo Normal:** [https://cielitodeflores.vercel.app/](https://cielitodeflores.vercel.app/)
+- **Catálogo VIP:** [https://cielitodefloresvip.vercel.app/](https://cielitodefloresvip.vercel.app/)
+
+## Requisitos previos
+
+Antes de ejecutar el proyecto localmente, instala:
+
+- Node.js compatible con la versión de Angular del proyecto.
+- npm.
+- Angular CLI, si lo necesitas para ejecutar los comandos globales.
+- Una cuenta y un proyecto de Firebase con los servicios requeridos habilitados.
+
+Puedes comprobar las versiones instaladas con:
 
 ```bash
-git clone https://github.com/TailAdmin/free-angular-admin-dashboard.git
+node --version
+npm --version
+ng version
 ```
 
----
+## Instalación
 
-### Install Dependencies
+### 1. Clonar el repositorio
+
+Sustituye `USUARIO` por el nombre de usuario u organización de GitHub donde se encuentra el repositorio.
+
+```bash
+git clone https://github.com/USUARIO/admincatalogofloreria.git
+```
+
+### 2. Entrar al proyecto
+
+```bash
+cd admincatalogofloreria
+```
+
+### 3. Instalar dependencias
 
 ```bash
 npm install
-# or
-yarn install
 ```
 
----
+### 4. Configurar Firebase
 
-### Start Development Server
+Configura los valores de Firebase en los archivos de entorno correspondientes a la estructura actual del proyecto.
+
+La aplicación requiere la configuración apropiada para los servicios que utiliza:
+
+- Firebase Authentication.
+- Cloud Firestore.
+- Firebase Storage.
+
+No publiques claves privadas, contraseñas, tokens ni credenciales administrativas en el repositorio.
+
+### 5. Ejecutar en desarrollo
 
 ```bash
 npm start
 ```
 
-Then open:
-👉 `http://localhost:4200`
+Si el proyecto no define el script `start`, puedes utilizar:
+
+```bash
+ng serve
+```
+
+Abre en el navegador la dirección local indicada por Angular CLI, normalmente:
+
+[http://localhost:4200](http://localhost:4200)
+
+## Seguridad y separación de catálogos
+
+La aplicación debe mantener las siguientes reglas:
+
+1. Los productos pertenecen al catálogo correspondiente.
+2. Las categorías se consultan y administran de acuerdo con su `catalogId`.
+3. Las zonas de entrega se consultan filtrando por `catalogId`.
+4. Las operaciones de actualización y eliminación deben comprobar la pertenencia de la zona al catálogo solicitado.
+5. Las reglas de seguridad de Firestore deben impedir el acceso no autorizado a los datos.
+6. Las credenciales de Firebase y los permisos deben configurarse correctamente para cada entorno.
+
+Las validaciones del frontend mejoran la experiencia de uso, pero no sustituyen las reglas de seguridad del backend.
+
+## Estructura general del proyecto
+
+```text
+src/
+└── app/
+    ├── core/
+    │   ├── catalog/
+    │   │   ├── catalog.service.ts
+    │   │   ├── category.service.ts
+    │   │   └── delivery-zone.service.ts
+    │   ├── firebase/
+    │   ├── models/
+    │   │   ├── catalog-item.model.ts
+    │   │   ├── category.model.ts
+    │   │   └── delivery-zone.model.ts
+    │   ├── notifications/
+    │   ├── storage/
+    │   └── tenant/
+    ├── pages/
+    │   └── catalog/
+    │       ├── catalog-page.component.ts
+    │       ├── catalog-page.component.html
+    │       └── catalog-page.component.scss
+    └── shared/
+```
+
+La estructura es orientativa y debe ajustarse si las rutas reales del repositorio difieren.
+
+## Scripts disponibles
+
+Consulta la sección `scripts` de `package.json` para conocer los comandos definidos en el proyecto.
+
+Los comandos habituales de Angular incluyen:
+
+```bash
+npm start
+ng serve
+ng build
+```
+
+Para generar una compilación de producción:
+
+```bash
+ng build
+```
+
+El directorio de salida depende de la configuración del proyecto Angular.
+
+## Despliegue
+
+El proyecto puede desplegarse en una plataforma compatible con aplicaciones Angular, como Vercel u otro servicio de hosting estático.
+
+Antes de publicar:
+
+- Configura las variables y los entornos de Firebase.
+- Verifica las reglas de Firestore y Storage.
+- Comprueba el funcionamiento del inicio de sesión.
+- Prueba las operaciones CRUD de productos y categorías.
+- Verifica que Normal y VIP mantengan sus zonas de entrega independientes.
+- Ejecuta una compilación de producción y revisa posibles errores.
+
+## Proyecto base y atribución
+
+Esta aplicación utiliza como base visual y estructural la plantilla **TailAdmin Angular**, adaptada para las necesidades de administración de catálogos de Admin Catálogo.
+
+- Sitio oficial: [https://tailadmin.com/](https://tailadmin.com/)
+- Repositorio original de Angular: [https://github.com/TailAdmin/free-angular-tailwind-dashboard](https://github.com/TailAdmin/free-angular-tailwind-dashboard)
+
+Consulta la licencia original de TailAdmin y conserva los avisos de atribución aplicables a los componentes y dependencias utilizados.
+
+## Estado del proyecto
+
+Panel administrativo en desarrollo continuo para gestionar los catálogos digitales de Admin Catálogo.
+
+Las funcionalidades disponibles y su configuración definitiva deben verificarse contra la versión publicada en el repositorio.
 
 ---
 
-## Angular.js Tailwind Components
-
-TailAdmin Angular ships with a rich set of **ready-to-use dashboard features**:
-
-- **Ecommerce Dashboard** with essential elements
-- Modern, accessible **sidebar navigation**
-- **Data visualization** with charts and graphs
-- **User profile management** and a **custom 404 page**
-- **Tables** and **charts** (line, bar, etc.)
-- **Authentication forms** and reusable input components
-- **UI elements**: alerts, dropdowns, modals, buttons, and more
-- Built-in **Dark Mode** 🕶️
-- and many more
-
-## Changelog
-
-### Version 1.2.0 - [September 02, 2026]
-
-- **Framework upgrade**: Angular 21 to 22, including CLI and build tooling
-- **Internationalization**: i18n support added for multi-language content
-- **Dependency updates**: FullCalendar and ApexCharts bumped to their latest majors
-- **Keyboard and dropdown improvements**: Better keyboard navigation and cleaner dropdown behavior
-- **RTL support**: Right-to-left layout support added across components
-
-### Version 1.1.1 - [May 23, 2026]
-
-- **New Feature**: Added **AI Settings** page to configure models, keys, and token limits.
-- **New Feature**: Added **Maps** page with MapLibre GL, Leaflet, and iframe styles.
-- **New Feature**: Added **Vector Maps** page powered by AmCharts 5 geodata (World & USA).
-- **New Feature**: Added **Radar Charts** page with 3 unique formats.
-- **New Feature**: Added **Radial Progress Charts** page featuring 4 custom layout templates.
-- **Enhancement**: Introduced new **Bar Charts Five & Six** and **Pie Charts Four & Five**.
-- **Bug Fix**: Resolved dropdown menu z-index stacking context overlapping issue in AI Chat history.
-- **Enhancement**: Resolved spacing gaps under map card containers.
-
-### Version 1.1.0 - [April 28, 2026]
-
-- **New Feature**: Added **AI Dashboard** with token usage and revenue tracking.
-- **New Feature**: Added **Sales Dashboard** with retention and multi-channel analytics.
-- **New Feature**: Added **Finance Dashboard** with cashflow and balance management.
-- **New Feature**: Introduced **6 New Layout variations** for improved UI flexibility.
-- **Enhancement**: Integrated **Advanced Data Visualization** with 7+ new chart types.
-
-### Version 1.0.3 - [March 15, 2026]
-
-- **Upgrade**: update angular dependencies and remove commented code.
-
-### Version 1.0.2 - [December 30, 2025]
-
-- **Upgrade**: Successfully upgraded project to **Angular 21**.
-- **New Feature**: Implementing **Dynamic API Keys** management.
-- **Enhancement**: Integrated **Flatpickr** date range picker.
-
-## Version 1.0.0 - August 2025
-
-- First release of TailAdmin Angular
-- Core dashboard layout and components
-- Essential UI elements and pages
-- Built with modern Angular best practices
+Desarrollado para la administración de catálogos digitales de **Admin Catálogo**.
