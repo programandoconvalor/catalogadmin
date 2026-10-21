@@ -87,6 +87,7 @@ export class CatalogPageComponent implements OnInit {
     name: ['', [Validators.required, Validators.pattern(/\S/)]],
     description: ['', [Validators.maxLength(3000)]],
     price: [0, [Validators.required, Validators.min(0)]],
+    currency: ['MXN', Validators.required],
     categoryId: [''],
     status: ['active' as CatalogItemStatus, Validators.required],
     sortOrder: [0, [Validators.required, Validators.min(0)]],
@@ -95,6 +96,54 @@ export class CatalogPageComponent implements OnInit {
     productSizes: this.formBuilder.array<ProductSizeFormGroup>([]),
     includes: this.formBuilder.array<FormControl<string>>([]),
   });
+
+
+  readonly currencies = [
+    { code: 'MXN', name: 'Peso mexicano', symbol: '$', flag: '🇲🇽', country: 'México', flagCode: 'mx' },
+    { code: 'USD', name: 'Dólar estadounidense', symbol: 'US$', flag: '🇺🇸', country: 'Estados Unidos', flagCode: 'us' },
+    { code: 'EUR', name: 'Euro', symbol: '€', flag: '🇪🇺', country: 'Unión Europea', flagCode: 'eu' },
+    { code: 'CAD', name: 'Dólar canadiense', symbol: 'CA$', flag: '🇨🇦', country: 'Canadá', flagCode: 'ca' },
+    { code: 'GBP', name: 'Libra esterlina', symbol: '£', flag: '🇬🇧', country: 'Reino Unido', flagCode: 'gb' },
+    { code: 'COP', name: 'Peso colombiano', symbol: '$', flag: '🇨🇴', country: 'Colombia', flagCode: 'co' },
+    { code: 'ARS', name: 'Peso argentino', symbol: '$', flag: '🇦🇷', country: 'Argentina', flagCode: 'ar' },
+    { code: 'PEN', name: 'Sol peruano', symbol: 'S/', flag: '🇵🇪', country: 'Perú', flagCode: 'pe' },
+    { code: 'CLP', name: 'Peso chileno', symbol: '$', flag: '🇨🇱', country: 'Chile', flagCode: 'cl' },
+    { code: 'BRL', name: 'Real brasileño', symbol: 'R$', flag: '🇧🇷', country: 'Brasil', flagCode: 'br' },
+    { code: 'UYU', name: 'Peso uruguayo', symbol: '$U', flag: '🇺🇾', country: 'Uruguay', flagCode: 'uy' },
+    { code: 'CRC', name: 'Colón costarricense', symbol: '₡', flag: '🇨🇷', country: 'Costa Rica', flagCode: 'cr' },
+    { code: 'GTQ', name: 'Quetzal guatemalteco', symbol: 'Q', flag: '🇬🇹', country: 'Guatemala', flagCode: 'gt' },
+    { code: 'DOP', name: 'Peso dominicano', symbol: 'RD$', flag: '🇩🇴', country: 'República Dominicana', flagCode: 'do' },
+    { code: 'JPY', name: 'Yen japonés', symbol: '¥', flag: '🇯🇵', country: 'Japón', flagCode: 'jp' },
+  ];
+
+  currencySearch = '';
+  currencyDropdownOpen = false;
+
+  get selectedCurrency() {
+    const code = this.itemForm.controls.currency.value;
+    return this.currencies.find((currency) => currency.code === code) ?? this.currencies[0];
+  }
+
+  get filteredCurrencies() {
+    const search = this.currencySearch.trim().toLocaleLowerCase();
+    return this.currencies.filter((currency) =>
+      `${currency.code} ${currency.name} ${currency.country}`.toLocaleLowerCase().includes(search),
+    );
+  }
+
+  toggleCurrencyDropdown(): void {
+    this.currencyDropdownOpen = !this.currencyDropdownOpen;
+    if (this.currencyDropdownOpen) this.currencySearch = '';
+  }
+
+  selectCurrency(code: string): void {
+    if (!this.currencies.some((currency) => currency.code === code)) return;
+    this.itemForm.controls.currency.setValue(code);
+    this.itemForm.controls.currency.markAsDirty();
+    this.itemForm.controls.currency.markAsTouched();
+    this.currencyDropdownOpen = false;
+    this.currencySearch = '';
+  }
 
   readonly categoryForm = this.formBuilder.group({
     name: ['', Validators.required],
@@ -138,14 +187,26 @@ export class CatalogPageComponent implements OnInit {
   errorMessage: string | null = null;
   successMessage: string | null = null;
   imageError: string | null = null;
-  currentImageUrl: string | undefined;
-  selectedImage: File | null = null;
-  imagePreviewUrl: string | null = null;
+  /** Imágenes ya guardadas en Storage/Firestore que se conservarán al guardar. */
+  existingImageUrls: string[] = [];
+  /** Archivos nuevos elegidos en el formulario (máximo 3 imágenes en total). */
+  selectedImages: File[] = [];
+  selectedImagePreviewUrls: string[] = [];
+  /** URLs que el usuario quitó y que se eliminarán de Storage tras guardar. */
+  private removedImageUrls: string[] = [];
+
+  get totalProductImages(): number {
+    return this.existingImageUrls.length + this.selectedImages.length;
+  }
+
+  get canAddProductImage(): boolean {
+    return this.totalProductImages < 3;
+  }
   private editingCommercialData?: CatalogProductCommercialData;
   private lastLoggedUploadProgress = 0;
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.releaseImagePreview());
+    this.destroyRef.onDestroy(() => this.releaseImagePreviews());
   }
 
   private runInAngular(action: () => void): void {
@@ -337,6 +398,7 @@ export class CatalogPageComponent implements OnInit {
       name: '',
       description: '',
       price: 0,
+      currency: 'MXN',
       categoryId: '',
       status: 'active',
       sortOrder: 0,
@@ -345,8 +407,9 @@ export class CatalogPageComponent implements OnInit {
     });
     this.clearCommercialControls();
 
-    this.currentImageUrl = undefined;
-    this.clearSelectedImage();
+    this.existingImageUrls = [];
+    this.removedImageUrls = [];
+    this.clearSelectedImages();
     this.imageError = null;
     this.itemModalOpen = true;
   }
@@ -369,8 +432,9 @@ export class CatalogPageComponent implements OnInit {
       this.runInAngular(() => {
         this.editingItemId = currentItem.id;
         this.editingCommercialData = currentItem.commercialData;
-        this.currentImageUrl = currentItem.imageUrl;
-        this.clearSelectedImage();
+        this.existingImageUrls = this.getProductImageUrls(currentItem);
+        this.removedImageUrls = [];
+        this.clearSelectedImages();
         this.imageError = null;
 
         this.itemForm.reset({
@@ -378,6 +442,7 @@ export class CatalogPageComponent implements OnInit {
           name: currentItem.name,
           description: currentItem.description,
           price: currentItem.price,
+          currency: currentItem.commercialData?.currency ?? 'MXN',
           categoryId: currentItem.categoryId ?? '',
           status: currentItem.status,
           sortOrder: currentItem.sortOrder,
@@ -452,6 +517,7 @@ export class CatalogPageComponent implements OnInit {
         categoryId: value.categoryId,
         baseTitle: value.name.trim(),
         basePriceMxn,
+        currency: value.currency,
         description: value.description.trim(),
         productSizes,
         includes,
@@ -463,27 +529,30 @@ export class CatalogPageComponent implements OnInit {
     this.clearFeedback();
     this.imageError = null;
 
-    let uploadedImage: UploadedProductImage | null = null;
-    const previousImageUrl = this.currentImageUrl;
+    const uploadedImages: UploadedProductImage[] = [];
+    const previousImageUrls = [...this.existingImageUrls];
+    const imagesToRemove = [...this.removedImageUrls];
     const updatingItem = this.editingItemId !== null;
+    let documentSaved = false;
 
     try {
-      if (this.selectedImage) {
+      if (this.selectedImages.length > 0) {
         this.uploadingImage = true;
         this.savePhase = 'uploadingImage';
         this.uploadProgress = 0;
         this.lastLoggedUploadProgress = 0;
-        console.info('[CatalogPage] Inicia carga de imagen:', {
-          catalogId: this.catalogId,
-          sizeBytes: this.selectedImage.size,
-          contentType: this.selectedImage.type,
-        });
 
-        try {
-          uploadedImage = await this.storageService.uploadProductImage(
+        for (const file of this.selectedImages) {
+          console.info('[CatalogPage] Inicia carga de imagen:', {
+            catalogId: this.catalogId,
+            sizeBytes: file.size,
+            contentType: file.type,
+          });
+
+          const uploadedImage = await this.storageService.uploadProductImage(
             this.catalogId,
             item.code,
-            this.selectedImage,
+            file,
             (progress) => {
               this.runInAngular(() => {
                 this.uploadProgress = progress.percent;
@@ -501,45 +570,26 @@ export class CatalogPageComponent implements OnInit {
               });
             },
           );
-          console.info('[CatalogPage] Imagen lista para guardar:', {
-            catalogId: this.catalogId,
-            path: uploadedImage.fullPath,
-          });
-        } finally {
-          this.runInAngular(() => {
-            this.uploadingImage = false;
-          });
+          uploadedImages.push(uploadedImage);
         }
-      } else {
-        console.info(
-          '[CatalogPage] Se guarda el producto sin imagen nueva.',
-        );
       }
 
       this.runInAngular(() => {
         this.savePhase = 'writingDocument';
       });
+
+      const finalImageUrls = [
+        ...previousImageUrls,
+        ...uploadedImages.map((image) => image.downloadUrl),
+      ].filter((url, index, urls) => Boolean(url) && urls.indexOf(url) === index).slice(0, 3);
+
       const itemToSave: CatalogItemInput = {
         ...item,
-        ...(uploadedImage
-          ? { imageUrl: uploadedImage.downloadUrl }
-          : previousImageUrl
-            ? { imageUrl: previousImageUrl }
-            : {}),
+        imageUrl: finalImageUrls[0] ?? '',
+        commercialData: item.commercialData
+          ? { ...item.commercialData, defaultImages: finalImageUrls }
+          : undefined,
       };
-      if (uploadedImage && itemToSave.commercialData) {
-        itemToSave.commercialData = {
-          ...itemToSave.commercialData,
-          defaultImages: [
-            uploadedImage.downloadUrl,
-            ...itemToSave.commercialData.defaultImages.filter(
-            (imageUrl) =>
-              imageUrl !== uploadedImage?.downloadUrl &&
-              imageUrl !== previousImageUrl,
-            ),
-          ],
-        };
-      }
 
       if (this.editingItemId) {
         const itemId = this.editingItemId;
@@ -555,7 +605,6 @@ export class CatalogPageComponent implements OnInit {
             itemToSave,
           );
         } catch (firestoreError) {
-          await this.cleanupFailedUpload(uploadedImage, firestoreError);
           throw firestoreError;
         }
 
@@ -582,7 +631,6 @@ export class CatalogPageComponent implements OnInit {
             itemToSave,
           );
         } catch (firestoreError) {
-          await this.cleanupFailedUpload(uploadedImage, firestoreError);
           throw firestoreError;
         }
 
@@ -600,18 +648,15 @@ export class CatalogPageComponent implements OnInit {
         });
       }
 
-      if (uploadedImage && previousImageUrl) {
+      documentSaved = true;
+      const urlsToDelete = imagesToRemove.filter((url) => !finalImageUrls.includes(url));
+      for (const imageUrl of urlsToDelete) {
         try {
-          await this.storageService.deleteProductImage(previousImageUrl);
+          await this.storageService.deleteProductImage(imageUrl);
         } catch (cleanupError) {
-          console.error(
-            '[CatalogPage] Producto guardado, pero no se pudo eliminar la imagen anterior:',
-            cleanupError,
-          );
-
+          console.error('[CatalogPage] Producto guardado, pero no se pudo eliminar una imagen retirada:', cleanupError);
           this.runInAngular(() => {
-            this.successMessage +=
-              ' No fue posible eliminar la imagen anterior; se conserva para evitar perder datos.';
+            this.successMessage += ' No fue posible eliminar una de las imágenes retiradas de Storage.';
           });
         }
       }
@@ -624,11 +669,18 @@ export class CatalogPageComponent implements OnInit {
 
       this.runInAngular(() => {
         this.itemModalOpen = false;
-        this.currentImageUrl =
-          uploadedImage?.downloadUrl ?? previousImageUrl;
-        this.clearSelectedImage();
+        this.existingImageUrls = finalImageUrls;
+        this.removedImageUrls = [];
+        this.clearSelectedImages();
       });
     } catch (error) {
+      if (!documentSaved && uploadedImages.length > 0) {
+        try {
+          await this.cleanupFailedUploads(uploadedImages, error);
+        } catch (cleanupError) {
+          console.error('[CatalogPage] Falló la limpieza de imágenes tras un error al guardar:', cleanupError);
+        }
+      }
       console.error(
         '[CatalogPage] No fue posible guardar el producto:',
         this.getSafeErrorDetails(error),
@@ -658,32 +710,58 @@ export class CatalogPageComponent implements OnInit {
 
   onProductImageSelected(event: Event): void {
     this.imageError = null;
-
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-
+    const files = Array.from(input.files ?? []);
     input.value = '';
 
-    if (!file) {
+    if (files.length === 0) return;
+
+    if (!this.canAddProductImage) {
+      this.imageError = 'Cada producto puede tener como máximo 3 imágenes.';
       return;
     }
 
-    const validationError = getProductImageValidationError(file);
-
-    if (validationError) {
-      this.clearSelectedImage();
-      this.imageError = validationError;
-      return;
+    const acceptedFiles: File[] = [];
+    for (const file of files) {
+      if (this.totalProductImages + acceptedFiles.length >= 3) {
+        this.imageError = 'Solo puedes cargar hasta 3 imágenes por producto.';
+        break;
+      }
+      const validationError = getProductImageValidationError(file);
+      if (validationError) {
+        this.imageError = validationError;
+        continue;
+      }
+      acceptedFiles.push(file);
     }
 
-    this.releaseImagePreview();
-    this.selectedImage = file;
-    this.imagePreviewUrl = URL.createObjectURL(file);
+    for (const file of acceptedFiles) {
+      this.selectedImages.push(file);
+      this.selectedImagePreviewUrls.push(URL.createObjectURL(file));
+    }
   }
 
-  removeSelectedImage(): void {
-    this.clearSelectedImage();
+  removeExistingProductImage(index: number): void {
+    const [removedUrl] = this.existingImageUrls.splice(index, 1);
+    if (removedUrl && !this.removedImageUrls.includes(removedUrl)) {
+      this.removedImageUrls.push(removedUrl);
+    }
     this.imageError = null;
+  }
+
+  removeSelectedProductImage(index: number): void {
+    const [previewUrl] = this.selectedImagePreviewUrls.splice(index, 1);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    this.selectedImages.splice(index, 1);
+    this.imageError = null;
+  }
+
+  private getProductImageUrls(item: CatalogItem): string[] {
+    const commercialImages = item.commercialData?.defaultImages ?? [];
+    return [item.imageUrl, ...commercialImages]
+      .filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+      .filter((url, index, urls) => urls.indexOf(url) === index)
+      .slice(0, 3);
   }
 
   addProductSize(): void {
@@ -957,20 +1035,20 @@ export class CatalogPageComponent implements OnInit {
 
           this.successMessage = 'Producto eliminado correctamente.';
         });
-        if (itemToDelete?.imageUrl) {
-          try {
-            await this.storageService.deleteProductImage(
-              itemToDelete.imageUrl,
-            );
-          } catch (cleanupError) {
-            console.error(
-              '[CatalogPage] Producto eliminado, pero no se pudo eliminar su imagen:',
-              cleanupError,
-            );
-
+        if (itemToDelete) {
+          const imageUrls = this.getProductImageUrls(itemToDelete);
+          const failedDeletions: string[] = [];
+          for (const imageUrl of imageUrls) {
+            try {
+              await this.storageService.deleteProductImage(imageUrl);
+            } catch (cleanupError) {
+              failedDeletions.push(imageUrl);
+              console.error('[CatalogPage] Producto eliminado, pero no se pudo eliminar una imagen de Storage:', cleanupError);
+            }
+          }
+          if (failedDeletions.length > 0) {
             this.runInAngular(() => {
-              this.successMessage +=
-                ' No se pudo eliminar su imagen de Storage; el documento ya fue eliminado.';
+              this.successMessage += ` No se pudieron eliminar ${failedDeletions.length} imagen(es) de Storage; el documento ya fue eliminado.`;
             });
           }
         }
@@ -1045,7 +1123,7 @@ export class CatalogPageComponent implements OnInit {
   closeItemModal(): void {
     if (!this.savingItem && !this.uploadingImage) {
       this.itemModalOpen = false;
-      this.clearSelectedImage();
+      this.clearSelectedImages();
       this.imageError = null;
     }
   }
@@ -1132,16 +1210,16 @@ export class CatalogPageComponent implements OnInit {
     };
   }
 
-  private releaseImagePreview(): void {
-    if (this.imagePreviewUrl) {
-      URL.revokeObjectURL(this.imagePreviewUrl);
-      this.imagePreviewUrl = null;
+  private releaseImagePreviews(): void {
+    for (const previewUrl of this.selectedImagePreviewUrls) {
+      URL.revokeObjectURL(previewUrl);
     }
+    this.selectedImagePreviewUrls = [];
   }
 
-  private clearSelectedImage(): void {
-    this.selectedImage = null;
-    this.releaseImagePreview();
+  private clearSelectedImages(): void {
+    this.selectedImages = [];
+    this.releaseImagePreviews();
   }
 
   private createProductSizeGroup(
@@ -1180,6 +1258,7 @@ export class CatalogPageComponent implements OnInit {
     categoryId: string;
     baseTitle: string;
     basePriceMxn: number;
+    currency: string;
     description: string;
     productSizes: CatalogProductSize[];
     includes: string[];
@@ -1194,6 +1273,7 @@ export class CatalogPageComponent implements OnInit {
       sku: fields.sku,
       baseTitle: fields.baseTitle,
       basePriceMxn: fields.basePriceMxn,
+      currency: fields.currency,
       description: fields.description,
       productSizes: fields.productSizes,
       includes: fields.includes,
@@ -1239,27 +1319,24 @@ export class CatalogPageComponent implements OnInit {
     ) + 1;
   }
 
-  private async cleanupFailedUpload(
-    uploadedImage: UploadedProductImage | null,
+  private async cleanupFailedUploads(
+    uploadedImages: UploadedProductImage[],
     firestoreError: unknown,
   ): Promise<void> {
-    if (!uploadedImage) {
-      return;
+    const cleanupErrors: unknown[] = [];
+    for (const uploadedImage of uploadedImages) {
+      try {
+        await this.storageService.deleteProductImageByPath(uploadedImage.fullPath);
+      } catch (cleanupError) {
+        cleanupErrors.push(cleanupError);
+        console.error('[CatalogPage] No se pudo limpiar una imagen tras fallar Firestore:', cleanupError);
+      }
     }
-
-    try {
-      await this.storageService.deleteProductImageByPath(
-        uploadedImage.fullPath,
-      );
-    } catch (cleanupError) {
-      console.error(
-        '[CatalogPage] Error de Firestore y fallo al limpiar la imagen subida:',
-        cleanupError,
-      );
-
+    if (cleanupErrors.length > 0) {
       throw new Error(
-        `No se pudo guardar el producto (${this.getErrorMessage(firestoreError, 'error de Firestore')}) y tampoco eliminar la imagen subida (${this.getErrorMessage(cleanupError, 'error de Storage')}).`,
+        `No se pudo guardar el producto (${this.getErrorMessage(firestoreError, 'error de Firestore')}) y no se pudieron limpiar ${cleanupErrors.length} imagen(es) subida(s).`,
       );
     }
   }
+
 }

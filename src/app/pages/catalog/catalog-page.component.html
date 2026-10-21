@@ -153,7 +153,7 @@
         </p>
         @if (!searchTerm && !categoryFilter && !statusFilter) {
           <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-            Crea un producto para comenzar. Los datos se guardarán en Firestore.
+            Crea un producto para comenzar. Los datos se guardarán en el catálogo .
           </p>
         }
       </div>
@@ -193,7 +193,7 @@
                   <p class="mt-1 line-clamp-2 text-theme-xs text-gray-500 dark:text-gray-400">{{ item.description }}</p>
                 </div>
                 <p class="mt-3 text-sm font-semibold text-pink-600 dark:text-pink-400">
-                  {{ item.price | currency:'MXN':'symbol':'1.0-2' }} MXN
+                  {{ item.price | currency:(item.commercialData?.currency || 'MXN'):'symbol':'1.0-2' }} {{ item.commercialData?.currency || 'MXN' }}
                 </p>
                 <div class="mt-auto flex gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
                   <button
@@ -265,7 +265,7 @@
                     </span>
                   </td>
                   <td class="whitespace-nowrap px-4 py-2.5 text-theme-xs text-gray-700 dark:text-gray-300">
-                    {{ item.price | currency:'MXN':'symbol':'1.0-2' }} MXN
+                    {{ item.price | currency:(item.commercialData?.currency || 'MXN'):'symbol':'1.0-2' }} {{ item.commercialData?.currency || 'MXN' }}
                   </td>
                   <td class="px-4 py-2.5">
                     <span
@@ -316,7 +316,7 @@
       <div>
         <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Categorías {{ catalogId === 'vip' ? 'VIP' : 'Normal' }}</h2>
         <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-          Las categorías se guardan por tenant y se separan según el catálogo.
+          Las categorías se guardan y se separan según el catálogo.
         </p>
       </div>
       <button
@@ -531,13 +531,92 @@
                 <small>El nombre es obligatorio.</small>
               }
             </label>
-            <label class="catalog-field">
-              <span>Precio base (MXN) *</span>
-              <input type="number" min="0" step="0.01" formControlName="price" />
-              @if (itemForm.controls.price.touched && itemForm.controls.price.invalid) {
-                <small>Indica un precio igual o mayor a 0.</small>
-              }
-            </label>
+            <div class="catalog-currency-price-grid">
+              <div class="catalog-field catalog-currency-field">
+                <span>Moneda *</span>
+                <div class="catalog-currency-selector">
+                  <button
+                    type="button"
+                    class="catalog-currency-trigger"
+                    [attr.aria-expanded]="currencyDropdownOpen"
+                    aria-haspopup="listbox"
+                    aria-label="Seleccionar moneda"
+                    (click)="toggleCurrencyDropdown()"
+                  >
+                    <img class="catalog-currency-flag-image" [src]="'https://flagcdn.com/w40/' + selectedCurrency.flagCode + '.png'" [alt]="'Bandera de ' + selectedCurrency.country" width="32" height="24" loading="lazy" />
+                    <span class="catalog-currency-selected-copy">
+                      <strong>{{ selectedCurrency.code }} · {{ selectedCurrency.name }}</strong>
+                      <small>{{ selectedCurrency.symbol }} · {{ selectedCurrency.country }}</small>
+                    </span>
+                    <svg class="catalog-currency-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </button>
+
+                  @if (currencyDropdownOpen) {
+                    <div class="catalog-currency-popover">
+                      <label class="catalog-currency-search">
+                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                          <circle cx="8.8" cy="8.8" r="5.8" stroke="currentColor" stroke-width="1.6" />
+                          <path d="m13.2 13.2 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                        </svg>
+                        <input
+                          type="search"
+                          [value]="currencySearch"
+                          (input)="currencySearch = $any($event.target).value"
+                          placeholder="Buscar moneda o país..."
+                          aria-label="Buscar moneda o país"
+                        />
+                      </label>
+                      <div class="catalog-currency-options" role="listbox" aria-label="Monedas disponibles">
+                        @for (currency of filteredCurrencies; track currency.code) {
+                          <button
+                            type="button"
+                            role="option"
+                            class="catalog-currency-option"
+                            [class.is-selected]="itemForm.controls.currency.value === currency.code"
+                            [attr.aria-selected]="itemForm.controls.currency.value === currency.code"
+                            (click)="selectCurrency(currency.code)"
+                          >
+                            <img class="catalog-currency-flag-image" [src]="'https://flagcdn.com/w40/' + currency.flagCode + '.png'" [alt]="'Bandera de ' + currency.country" width="32" height="24" loading="lazy" />
+                            <span class="catalog-currency-option-copy">
+                              <strong>{{ currency.code }} · {{ currency.name }}</strong>
+                              <small>{{ currency.country }}</small>
+                            </span>
+                            <span class="catalog-currency-symbol">{{ currency.symbol }}</span>
+                            @if (itemForm.controls.currency.value === currency.code) {
+                              <span class="catalog-currency-check" aria-hidden="true">✓</span>
+                            }
+                          </button>
+                        } @empty {
+                          <p class="catalog-currency-empty">No se encontraron monedas.</p>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+                @if (itemForm.controls.currency.touched && itemForm.controls.currency.invalid) {
+                  <small>Selecciona una moneda.</small>
+                }
+              </div>
+
+              <label class="catalog-field catalog-base-price-field">
+                <span>Precio ({{ selectedCurrency.code }}) *</span>
+                <div class="catalog-price-input-wrap catalog-base-price-input-wrap">
+                  <span aria-hidden="true">{{ selectedCurrency.symbol }}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    formControlName="price"
+                    aria-label="Precio base del producto"
+                  />
+                </div>
+                @if (itemForm.controls.price.touched && itemForm.controls.price.invalid) {
+                  <small>Indica un precio igual o mayor a 0.</small>
+                }
+              </label>
+            </div>
             <label class="catalog-field">
               <span>Orden de aparición</span>
               <input type="number" min="0" step="1" formControlName="sortOrder" />
@@ -560,151 +639,80 @@
           </div>
         </section>
 
-        <section class="catalog-form-section catalog-presentations-section">
-          <div class="catalog-presentations-heading">
-            <div>
+        <section class="catalog-form-section catalog-images-section">
+          <div class="catalog-images-heading">
+            <div class="catalog-images-heading-copy">
               <h3>
-                <span class="catalog-section-icon" aria-hidden="true">◇</span>
-                Presentaciones y precios
+                <span class="catalog-section-icon" aria-hidden="true">▧</span>
+                Imágenes del producto
               </h3>
-              <p>Agrega las opciones que tus clientes podrán elegir para este arreglo.</p>
+              <p class="catalog-images-help">
+                Agrega hasta 3 imágenes para mostrar este producto en el catálogo.
+                Formatos JPG, PNG o WebP; máximo 5 MB por imagen.
+              </p>
             </div>
-            <span class="catalog-presentations-count">
-              {{ productSizes.length }} {{ productSizes.length === 1 ? 'opción' : 'opciones' }}
-            </span>
+            <span class="catalog-images-count">{{ totalProductImages }}/3 imágenes</span>
           </div>
 
-          <div formArrayName="productSizes" class="catalog-presentations-list">
-            @for (size of productSizes.controls; track $index) {
-              <article class="catalog-presentation-card" [formGroupName]="$index">
-                <div class="catalog-presentation-card-top">
-                  <span class="catalog-presentation-number">{{ $index + 1 }}</span>
-                  <div class="catalog-presentation-card-title">
-                    <strong>Presentación {{ $index + 1 }}</strong>
-                    <span>Define cómo se ofrecerá este arreglo.</span>
-                  </div>
-                  <button
-                    type="button"
-                    class="catalog-presentation-remove"
-                    (click)="removeProductSize($index)"
-                    [attr.aria-label]="'Eliminar presentación ' + (size.controls.label.value || $index + 1)"
-                    title="Eliminar presentación"
-                  >
-                    <span aria-hidden="true">×</span>
-                    <span class="catalog-remove-label">Eliminar</span>
-                  </button>
-                </div>
-
-                <div class="catalog-presentation-fields">
-                  <label class="catalog-field catalog-presentation-name">
-                    <span>Nombre de la presentación *</span>
-                    <input
-                      formControlName="label"
-                      placeholder="Ejemplo: 25 rosas, Chico, Premium"
-                      autocomplete="off"
-                    />
-                    @if (size.controls.label.touched && size.controls.label.invalid) {
-                      <small>Escribe un nombre para esta presentación.</small>
-                    }
-                  </label>
-
-                  <label class="catalog-field catalog-presentation-price">
-                    <span>Precio (MXN) *</span>
-                    <div class="catalog-price-input-wrap">
-                      <span aria-hidden="true">$</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        formControlName="priceMxn"
-                        placeholder="0.00"
-                      />
-                    </div>
-                    @if (size.controls.priceMxn.touched && size.controls.priceMxn.invalid) {
-                      <small>{{ size.controls.priceMxn.hasError('required') ? 'Indica el precio.' : 'El precio no puede ser negativo.' }}</small>
-                    }
-                  </label>
-
-                  <label class="catalog-field catalog-presentation-detail">
-                    <span>Detalle o cantidad (opcional)</span>
-                    <input
-                      formControlName="subtitle"
-                      placeholder="Ejemplo: 25 rosas rojas premium"
-                    />
-                  </label>
-
-                  <details class="catalog-presentation-advanced">
-                    <summary>Configuración avanzada</summary>
-                    <label class="catalog-field">
-                      <span>Identificador interno *</span>
-                      <input formControlName="id" placeholder="Ejemplo: 25-rosas" autocomplete="off" />
-                      <small>Clave técnica única para identificar esta opción.</small>
-                      @if (size.controls.id.touched && size.controls.id.invalid) {
-                        <small>El identificador es obligatorio.</small>
-                      }
-                    </label>
-                  </details>
-                </div>
+          <div class="catalog-images-grid">
+            @for (imageUrl of existingImageUrls; track imageUrl; let index = $index) {
+              <article class="catalog-image-card">
+                <img
+                  [src]="imageUrl"
+                  [alt]="'Imagen ' + (index + 1) + ' de ' + (itemForm.controls.name.value || 'producto')"
+                  class="catalog-image-thumb"
+                />
+                <span class="catalog-image-index">{{ index + 1 }}</span>
+                <button
+                  type="button"
+                  class="catalog-image-remove"
+                  (click)="removeExistingProductImage(index)"
+                  [disabled]="savingItem"
+                  [attr.aria-label]="'Quitar imagen ' + (index + 1)"
+                  title="Quitar imagen"
+                >×</button>
               </article>
             }
-          </div>
-
-          @if (productSizes.length === 0) {
-            <div class="catalog-presentations-empty">
-              <span class="catalog-presentations-empty-icon" aria-hidden="true">＋</span>
-              <strong>Aún no hay presentaciones</strong>
-              <p>Por ejemplo: 25 rosas, 50 rosas o 100 rosas. Cada opción puede tener su propio precio.</p>
-            </div>
-          }
-
-          <button type="button" class="catalog-outline-button catalog-add-presentation" (click)="addProductSize()">
-            <span aria-hidden="true">＋</span> Agregar presentación
-          </button>
-          <p class="catalog-presentations-help">
-            Consejo: usa nombres fáciles de entender, como “25 rosas” o “Ramo grande”. Los precios debes configurarlos según tu negocio.
-          </p>
-        </section>
-
-        <section class="catalog-form-section">
-          <h3>
-            <span class="catalog-section-icon" aria-hidden="true">▧</span>
-            Imágenes
-          </h3>
-          <div class="catalog-image-row">
-            @if (imagePreviewUrl || currentImageUrl) {
-              <img
-                [src]="imagePreviewUrl || currentImageUrl"
-                [alt]="'Vista previa de ' + (itemForm.controls.name.value || 'producto')"
-                class="catalog-image-preview"
-              />
-            } @else {
-              <div class="catalog-image-empty">Sin imagen</div>
+            @for (previewUrl of selectedImagePreviewUrls; track previewUrl; let index = $index) {
+              <article class="catalog-image-card catalog-image-card-pending">
+                <img
+                  [src]="previewUrl"
+                  [alt]="'Nueva imagen ' + (index + 1)"
+                  class="catalog-image-thumb"
+                />
+                <span class="catalog-image-index">{{ existingImageUrls.length + index + 1 }}</span>
+                <button
+                  type="button"
+                  class="catalog-image-remove"
+                  (click)="removeSelectedProductImage(index)"
+                  [disabled]="savingItem"
+                  [attr.aria-label]="'Quitar nueva imagen ' + (index + 1)"
+                  title="Quitar imagen"
+                >×</button>
+                <span class="catalog-image-pending-label">Nueva</span>
+              </article>
             }
-            <label class="catalog-upload-box">
-              <span class="catalog-upload-icon" aria-hidden="true">⇧</span>
-              <strong>{{ imagePreviewUrl || currentImageUrl ? 'Cambiar imagen' : 'Subir imagen' }}</strong>
-              <span>JPG, PNG o WebP · Máx. 5 MB</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                (change)="onProductImageSelected($event)"
-                [disabled]="savingItem"
-              />
-            </label>
+            @if (canAddProductImage) {
+              <label class="catalog-upload-box catalog-upload-box-multiple">
+                <span class="catalog-upload-icon" aria-hidden="true">＋</span>
+                <strong>{{ totalProductImages === 0 ? 'Subir imágenes' : 'Agregar imagen' }}</strong>
+                <span>{{ 3 - totalProductImages }} {{ 3 - totalProductImages === 1 ? 'espacio disponible' : 'espacios disponibles' }}</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                  multiple
+                  (change)="onProductImageSelected($event)"
+                  [disabled]="savingItem"
+                />
+              </label>
+            }
           </div>
-          @if (selectedImage) {
-            <button
-              type="button"
-              class="catalog-text-button"
-              (click)="removeSelectedImage()"
-              [disabled]="savingItem"
-            >Quitar selección · {{ selectedImage.name }}</button>
-          }
+
           @if (imageError) {
             <p role="alert" class="catalog-inline-error">{{ imageError }}</p>
           }
           @if (uploadingImage) {
-            <p role="status" class="catalog-upload-status">Subiendo imagen…</p>
+            <p role="status" class="catalog-upload-status">Subiendo imágenes… {{ uploadProgress }}%</p>
           }
         </section>
       </div>

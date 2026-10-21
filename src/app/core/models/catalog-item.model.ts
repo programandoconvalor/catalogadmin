@@ -70,6 +70,8 @@ export interface CatalogProductCommercialData {
 
   defaultVariantId?: ProductVariantId;
   basePriceMxn: number;
+  /** Moneda seleccionada en el administrador (ISO 4217); MXN para productos antiguos. */
+  currency?: string;
 
   defaultImages: string[];
   activeSizeOptions: CatalogProductSizeOption[];
