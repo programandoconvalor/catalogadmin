@@ -1,0 +1,53 @@
+
+<div class="relative z-1 bg-white p-6 dark:bg-gray-900 sm:p-0">
+  <div
+    class="relative flex h-screen w-full flex-col justify-center dark:bg-gray-900 sm:p-0 lg:flex-row"
+  >
+    <!-- Authentication content -->
+    <div class="flex w-full flex-col lg:w-1/2">
+      <ng-content></ng-content>
+    </div>
+
+    <!-- Branding -->
+    <div
+      class="relative hidden h-full w-full items-center bg-brand-950 lg:grid lg:w-1/2 dark:bg-white/5"
+    >
+      <div class="z-1 flex w-full items-center justify-center">
+        <!-- Background grid -->
+        <app-grid-shape />
+
+        <!-- Branding content -->
+        <div class="flex w-full max-w-2xl flex-col items-center px-6 text-center">
+
+          <!-- Logo -->
+          <img
+            src="/images/logo/AdminCatalog.png"
+            alt="Administración de catálogo"
+            width="260"
+            height="260"
+            class="mb-8 max-h-64 object-contain"
+          />
+
+          <!-- Main title: keep on one line -->
+          <h2
+            class="whitespace-nowrap text-3xl font-semibold text-white"
+          >
+            Administración de catálogo
+          </h2>
+
+
+          <p class="mt-2 text-sm text-gray-400">
+            Gestiona tu catálogo de forma sencilla.
+          </p>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Theme toggle -->
+    <div class="fixed bottom-6 right-6 z-50 hidden sm:block">
+      <app-theme-toggle-two />
+    </div>
+  </div>
+</div>
+```
