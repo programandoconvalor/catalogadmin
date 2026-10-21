@@ -85,14 +85,7 @@ export class CatalogPageComponent implements OnInit {
   readonly itemForm = this.formBuilder.group({
     code: ['', [Validators.required, Validators.pattern(/\S/)]],
     name: ['', [Validators.required, Validators.pattern(/\S/)]],
-    description: [
-      '',
-      [
-        Validators.required,
-        Validators.pattern(/\S/),
-        Validators.maxLength(3000),
-      ],
-    ],
+    description: ['', [Validators.maxLength(3000)]],
     price: [0, [Validators.required, Validators.min(0)]],
     categoryId: [''],
     status: ['active' as CatalogItemStatus, Validators.required],
