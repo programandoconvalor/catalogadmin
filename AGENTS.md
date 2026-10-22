@@ -1,4 +1,4 @@
-# AGENTS.md — TailAdmin Free Angular
+# AGENTS.md — Administración de Catálogos para Florerías
 
 > Free Angular 22 administrative dashboard template · Standalone Components · Tailwind CSS v4 · ApexCharts · FullCalendar · Flatpickr · Swiper · RTL Layout Support
 

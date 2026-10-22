@@ -245,7 +245,7 @@ Esta aplicación utiliza como base visual y estructural la plantilla **TailAdmin
 - Sitio oficial: [https://tailadmin.com/](https://tailadmin.com/)
 - Repositorio original de Angular: [https://github.com/TailAdmin/free-angular-tailwind-dashboard](https://github.com/TailAdmin/free-angular-tailwind-dashboard)
 
-Consulta la licencia original de TailAdmin y conserva los avisos de atribución aplicables a los componentes y dependencias utilizados.
+Consulta la licencia original de Administración de Catálogos para Florerías y conserva los avisos de atribución aplicables a los componentes y dependencias utilizados.
 
 ## Estado del proyecto
 
