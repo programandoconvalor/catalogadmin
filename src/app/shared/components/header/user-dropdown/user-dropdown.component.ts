@@ -115,7 +115,7 @@ export class UserDropdownComponent
   get tenantName(): string {
     return (
       this.tenantContextService.tenant?.name?.trim() ||
-      'Administración de catálogo'
+      'Administración de Catálogos para Florerías'
     );
   }
 
