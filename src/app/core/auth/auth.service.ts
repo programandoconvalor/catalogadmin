@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   setPersistence,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   User,
 } from 'firebase/auth';
@@ -117,6 +118,31 @@ export class AuthService {
     );
 
     return credential.user;
+  }
+
+
+  /*
+   * ============================================
+   * PASSWORD RESET
+   * ============================================
+   */
+
+  async sendPasswordReset(email: string): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Firebase envía el enlace de restablecimiento.
+    // Tras completar el proceso en la página segura de Firebase,
+    // el usuario vuelve a la pantalla de inicio de sesión.
+    const actionCodeSettings = {
+      url: `${window.location.origin}/signin?passwordReset=success`,
+      handleCodeInApp: false,
+    };
+
+    await sendPasswordResetEmail(
+      auth,
+      normalizedEmail,
+      actionCodeSettings
+    );
   }
 
 

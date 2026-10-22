@@ -1,3 +1,4 @@
+
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -46,7 +47,13 @@ export class SigninFormComponent {
     this.showPassword = !this.showPassword;
   }
 
-  isValidEmail(email: string): boolean {
+  /**
+   * Valida el formato del correo electrónico.
+   * Se eliminan los espacios al inicio y al final.
+   */
+  isValidEmail(value: string): boolean {
+    const email = value.trim();
+
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
@@ -69,41 +76,37 @@ export class SigninFormComponent {
   }
 
   async onSignIn(): Promise<void> {
-    // Marcar campos como tocados
     this.emailTouched = true;
     this.passwordTouched = true;
 
-    // Validar correo
-    if (!this.email.trim()) {
-      this.errorMessage.set(
-        'Ingresa tu correo electrónico.'
-      );
+    const normalizedEmail = this.email.trim();
+
+    // Validar correo electrónico.
+    if (!normalizedEmail) {
+      this.errorMessage.set('Ingresa tu correo electrónico.');
       return;
     }
 
-    if (!this.isValidEmail(this.email.trim())) {
+    if (!this.isValidEmail(normalizedEmail)) {
       this.errorMessage.set(
         'Ingresa un correo electrónico válido.'
       );
       return;
     }
 
-    // Validar contraseña
+    // Validar contraseña.
     if (!this.password) {
-      this.errorMessage.set(
-        'Ingresa tu contraseña.'
-      );
+      this.errorMessage.set('Ingresa tu contraseña.');
       return;
     }
 
-    // Iniciar loading
     this.isLoading.set(true);
     this.errorMessage.set('');
 
     try {
-      // 1. Autenticar usuario con Firebase Auth
+      // 1. Autenticar al usuario con Firebase Authentication.
       const user = await this.authService.signIn(
-        this.email.trim(),
+        normalizedEmail,
         this.password,
         this.isChecked
       );
@@ -113,11 +116,11 @@ export class SigninFormComponent {
         user.uid
       );
 
-      // 2. Cargar contexto del tenant
+      // 2. Cargar el contexto de la florería.
       const tenantContext =
         await this.tenantContextService.loadByUid(user.uid);
 
-      // 3. Verificar que el usuario tenga un tenant válido
+      // 3. Verificar que el usuario tenga una florería asociada.
       if (!tenantContext) {
         console.warn(
           '[SigninForm] El usuario no tiene un tenant asociado.'
@@ -132,7 +135,6 @@ export class SigninFormComponent {
         return;
       }
 
-      // 4. Mostrar información del contexto
       console.log(
         '[SigninForm] Tenant:',
         tenantContext.tenantId
@@ -143,20 +145,21 @@ export class SigninFormComponent {
         tenantContext.member.role
       );
 
-      // 5. Login completo
+      // 4. Navegar al dashboard.
       console.log(
         '[SigninForm] Inicio de sesión completado correctamente.'
       );
 
-      // 6. Ir al dashboard
       await this.router.navigate(['/']);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         '[SigninForm] Error de autenticación:',
         error
       );
 
-      switch (error?.code) {
+      const authError = error as { code?: string };
+
+      switch (authError?.code) {
         case 'auth/invalid-credential':
         case 'auth/invalid-login-credentials':
           this.errorMessage.set(
@@ -188,7 +191,6 @@ export class SigninFormComponent {
           );
       }
     } finally {
-      // Siempre quitar loading
       this.isLoading.set(false);
     }
   }

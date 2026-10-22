@@ -18,6 +18,7 @@ import { ImagesComponent } from './pages/ui-elements/images/images.component';
 import { VideosComponent } from './pages/ui-elements/videos/videos.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
+import { ResetPasswordComponent } from './pages/auth-pages/reset-password/reset-password.component';
 import { CalenderComponent } from './pages/calender/calender.component';
 import { CatalogPageComponent } from './pages/catalog/catalog-page.component';
 
@@ -173,6 +174,12 @@ export const routes: Routes = [
     path: 'signup',
     component: SignUpComponent,
     canActivate: [guestGuard],
+    title: 'Administración de Catálogos para Florerías',
+  },
+
+  {
+    path: 'reset-password',
+    component: ResetPasswordComponent,
     title: 'Administración de Catálogos para Florerías',
   },
 
