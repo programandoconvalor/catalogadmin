@@ -1,17 +1,15 @@
 <div class="store-profile-page">
-  <div class="page-heading">
+  <header class="page-heading">
+    
     <div class="heading-main">
-      <div class="heading-icon">♧</div>
       <div>
-        <div class="eyebrow">ADMINISTRACIÓN DE CATÁLOGOS</div>
-        <h1>Editar perfil de la florería</h1>
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90">
+    Editar perfil del catálogo 
+  </h2>
         <p>Esta información se compartirá en los catálogos Normal y VIP.</p>
       </div>
     </div>
-    <button class="primary-button save-top" type="button" (click)="saveProfile(activeTab)" [disabled]="saving">
-      <span>▣</span> {{ saving ? 'Guardando...' : 'Guardar cambios' }}
-    </button>
-  </div>
+  </header>
 
   @if (errorMessage) {
     <div class="notice notice-error" role="alert"><span>!</span>{{ errorMessage }}</div>
@@ -29,10 +27,15 @@
   </nav>
 
   <div class="profile-layout">
-      <main class="profile-main">
-        @if (activeTab === 'general') {
-          <section class="panel">
-            <header class="panel-heading"><span class="panel-icon">▦</span><div><h2>Logo y nombre</h2><p>La identidad que verán tus clientes en ambos catálogos.</p></div></header>
+    <main class="profile-main">
+      @if (activeTab === 'general') {
+        <div class="general-grid">
+          <section class="panel branding-panel">
+            <header class="panel-heading"><div>
+              <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Logo y nombre</h2>
+              
+              
+              <p>La identidad que verán tus clientes en ambos catálogos.</p></div></header>
             <div class="branding-upload">
               <div class="logo-preview">
                 @if (profile.logoUrl) { <img [src]="profile.logoUrl" alt="Logo de la florería" /> }
@@ -44,177 +47,158 @@
                 <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onLogoSelected($event)" />
               </label>
             </div>
-            <div class="profile-brand-fields">
-              <label class="field field-full">
-                <span>Nombre de la florería <b>*</b></span>
-                <input [(ngModel)]="profile.name" maxlength="100" placeholder="Ej. Cielito de Flores" autocomplete="organization" />
-              </label>
-              <label class="field field-full">
-                <span>Subtítulo o eslogan <small class="optional-label">Opcional</small></span>
-                <input [(ngModel)]="profile.tagline" maxlength="160" placeholder="Arreglos florales para momentos inolvidables" />
-              </label>
+            <label class="field field-full">
+              <span>Nombre de la florería <b>*</b></span>
+              <input [(ngModel)]="profile.name" name="storeName" maxlength="100" placeholder="Ej. Cielito de Flores" autocomplete="organization" />
+            </label>
+            <label class="field field-full">
+              <span>Subtítulo o eslogan </span>
+              <input [(ngModel)]="profile.tagline" name="storeTagline" maxlength="160" placeholder="Arreglos florales para momentos inolvidables" />
+            </label>
+            <div class="bottom-actions">
+  <button class="catalog-primary-action" type="button" (click)="saveProfile('general')" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar logo y nombre' }}</button>
+          
             </div>
           </section>
 
-          <section class="panel">
-            <header class="panel-heading"><span class="panel-icon">▤</span><div><h2>Descripción</h2><p>Un mensaje breve para presentar tu negocio.</p></div></header>
-            <label class="field"><span>Descripción corta (opcional)</span><textarea [(ngModel)]="profile.description" rows="4" maxlength="150" placeholder="Describe tus arreglos, calidad y servicio..."></textarea><small class="field-hint">{{ profile.description.length }}/150 caracteres</small></label>
+          <section class="panel description-panel">
+            <header class="panel-heading"><div><h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Descripción</h2><p>Un mensaje breve para presentar tu negocio.</p></div></header>
+            <label class="field"><span>Descripción corta </span>
+              <textarea [(ngModel)]="profile.description" name="storeDescription" rows="5" maxlength="150" placeholder="Describe tus arreglos, calidad y servicio..."></textarea>
+              <small class="field-hint character-count">{{ (profile.description || '').length }}/150 caracteres</small>
+            </label>
+            <button class="catalog-primary-action" type="button" (click)="saveProfile('general')" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar descripción' }}</button>
           </section>
-        }
-
-        @if (activeTab === 'contact') {
-          <section class="panel">
-            <header class="panel-heading"><span class="panel-icon">☎</span><div><h2>Información de contacto</h2><p>Estos datos aparecerán en la sección “Contáctanos” del catálogo.</p></div></header>
-            <div class="contact-fields">
-              <label class="field field-full">
-                <span>Teléfono principal <b>*</b></span>
-                <div class="phone-input-group">
-                  <select [(ngModel)]="primaryPhoneCountryCode" name="primaryPhoneCountryCode" aria-label="País del teléfono principal">
-                    <option *ngFor="let country of phoneCountries" [value]="country.code">{{ country.flag }} {{ country.dialCode }}</option>
-                  </select>
-                  <input [(ngModel)]="profile.primaryPhone" name="primaryPhone" type="tel" placeholder="722 123 4567" autocomplete="tel-national" />
-                </div>
-                <small class="field-hint">Selecciona el país y la lada del número principal.</small>
-              </label>
-              <label class="field field-full">
-                <span>Correo electrónico <small class="optional-label">Opcional</small></span>
-                <input [(ngModel)]="profile.email" type="email" placeholder="pedidos@tufloreria.com" autocomplete="email" />
-              </label>
-              <label class="field field-full">
-                <span>Página web <small class="optional-label">Opcional</small></span>
-                <input [(ngModel)]="profile.website" type="url" placeholder="https://tufloreria.com" autocomplete="url" />
-              </label>
-            </div>
-            <div class="subsection-heading additional-phones-heading">
-              <div><h3>Teléfonos adicionales</h3><p>Agrega hasta 3 celulares extra además del principal. Todos son opcionales.</p></div>
-              <span class="count-pill">{{ profile.phones.length }}/3</span>
-            </div>
-            <div class="additional-phones-list">
-            @for (phone of profile.phones; track $index; let i = $index) {
-              <div class="repeat-row additional-phone-row">
-                <label class="field phone-label-field">
-                  <span>Etiqueta <small class="optional-label">Opcional</small></span>
-                  <input [(ngModel)]="phone.label" [name]="'phone-label-' + i" placeholder="Ej. WhatsApp pedidos" aria-label="Etiqueta del teléfono" />
-                </label>
-                <label class="field phone-number-field">
-                  <span>Número celular</span>
-                  <div class="phone-input-group">
-                    <select [(ngModel)]="phone.countryCode" [name]="'phone-country-' + i" aria-label="País del teléfono adicional">
-                      <option *ngFor="let country of phoneCountries" [value]="country.code">{{ country.flag }} {{ country.dialCode }}</option>
-                    </select>
-                    <input [(ngModel)]="phone.number" [name]="'phone-number-' + i" type="tel" placeholder="722 123 4567" aria-label="Número adicional" />
-                  </div>
-                </label>
-                <button type="button" class="icon-danger" (click)="removePhone(i)" aria-label="Eliminar teléfono">×</button>
-              </div>
-            }
-            </div>
-            <button type="button" class="outline-button add-phone-button" (click)="addPhone()" [disabled]="profile.phones.length >= maxAdditionalPhones">＋ Agregar teléfono</button>
-          </section>
-
-          <section class="panel">
-            <header class="panel-heading"><span class="panel-icon">⌯</span><div><h2>Redes sociales (hasta 5)</h2><p>Agrega los perfiles oficiales de tu florería.</p></div></header>
-            @for (social of profile.socials; track $index; let i = $index) {
-              <div class="social-row">
-                <span class="social-brand" [style.background]="socialMeta(social.network).color">{{ socialMeta(social.network).icon }}</span>
-                <select [(ngModel)]="social.network" [name]="'social-network-' + i" aria-label="Red social">
-                  @for (network of socialNetworks; track network.id) { <option [value]="network.id">{{ network.label }}</option> }
-                </select>
-                <input [(ngModel)]="social.url" [name]="'social-url-' + i" type="url" [placeholder]="'URL de ' + socialMeta(social.network).label" />
-                <button type="button" class="icon-danger" (click)="removeSocial(i)" aria-label="Eliminar red social">×</button>
-              </div>
-            }
-            <button type="button" class="outline-button" (click)="addSocial()" [disabled]="profile.socials.length >= maxSocialNetworks || socialOptionsAvailable.length === 0">＋ Agregar red social</button>
-            <p class="field-hint">Puedes agregar hasta 5 redes sociales. Usa la URL completa del perfil o enlace de WhatsApp.</p>
-          </section>
-        }
-
-        @if (activeTab === 'address') {
-          <section class="panel">
-            <header class="panel-heading"><span class="panel-icon">⌖</span><div><h2>Dirección y mapa</h2><p>Facilita que tus clientes encuentren la florería o consulten la zona de atención.</p></div></header>
-            <label class="field"><span>Dirección completa (opcional)</span><textarea [(ngModel)]="profile.address.street" rows="3" placeholder="Calle, número, colonia y referencias"></textarea></label>
-            <div class="form-grid two">
-              <label class="field"><span>Ciudad o municipio</span><input [(ngModel)]="profile.address.city" placeholder="San Mateo Atenco" /></label>
-              <label class="field"><span>Estado</span><input [(ngModel)]="profile.address.state" placeholder="Estado de México" /></label>
-              <label class="field"><span>Código postal</span><input [(ngModel)]="profile.address.postalCode" inputmode="numeric" placeholder="52100" /></label>
-              <label class="field"><span>País</span><input [(ngModel)]="profile.address.country" placeholder="México" /></label>
-            </div>
-            <div class="subsection-heading"><div><h3>Ubicación en mapa</h3><p>Escribe la dirección o pega un enlace de Google Maps.</p></div></div>
-            <label class="field"><span>URL de Google Maps (opcional)</span><input [(ngModel)]="profile.address.mapUrl" (blur)="onMapUrlBlur()" type="url" placeholder="Pega aquí el enlace de Google Maps" /><small class="field-hint">Al salir del campo intentaremos completar ciudad, estado, código postal y dirección si el enlace contiene coordenadas. {{ resolvingMapUrl ? 'Detectando ubicación…' : '' }}</small></label>
-            <div class="map-preview">
-              <div class="map-art"><span class="map-pin">●</span><span class="map-street street-one"></span><span class="map-street street-two"></span><span class="map-label">{{ profile.address.city || 'Tu ciudad' }}</span></div>
-              <div class="map-actions"><p>{{ fullAddress || 'Agrega una dirección o pega un enlace de Google Maps.' }}</p><button type="button" class="outline-button" (click)="openMap()" [disabled]="!mapPreviewUrl">Abrir en Google Maps ↗</button></div>
-            </div>
-          </section>
-        }
-
-        @if (activeTab === 'appearance') {
-          <section class="panel">
-            <header class="panel-heading"><span class="panel-icon">✿</span><div><h2>Apariencia en catálogos</h2><p>Personaliza algunos elementos visuales compartidos por Normal y VIP.</p></div></header>
-            <label class="field color-field"><span>Color principal</span><div class="color-control"><input type="color" [(ngModel)]="profile.primaryColor" /><input [(ngModel)]="profile.primaryColor" maxlength="7" /></div><small class="field-hint">Se usa en botones, iconos y detalles del catálogo.</small></label>
-            <label class="field"><span>Imagen de portada (opcional)</span></label>
-            <div class="cover-upload">
-              @if (profile.coverUrl) { <img [src]="profile.coverUrl" alt="Portada de la florería" /> }
-              @else { <div class="cover-placeholder">Imagen de portada para tus catálogos</div> }
-              <label class="upload-drop compact"><span class="upload-icon">↑</span><strong>{{ uploadingCover ? 'Subiendo portada...' : 'Cambiar imagen' }}</strong><small>JPG, PNG o WebP · Máx. 3 MB</small><input type="file" accept="image/jpeg,image/png,image/webp" (change)="onCoverSelected($event)" /></label>
-            </div>
-            <div class="subsection-heading"><div><h3>Métodos de pago</h3><p>Selecciona los métodos que se mostrarán en el pie del catálogo.</p></div></div>
-            <div class="payment-options">
-              <label><input type="checkbox" [checked]="paymentChecked('cash')" (change)="togglePayment('cash', $any($event.target).checked)" /> Efectivo</label>
-              <label><input type="checkbox" [checked]="paymentChecked('deposit')" (change)="togglePayment('deposit', $any($event.target).checked)" /> Depósitos</label>
-              <label><input type="checkbox" [checked]="paymentChecked('transfer')" (change)="togglePayment('transfer', $any($event.target).checked)" /> Transferencias</label>
-            </div>
-            <label class="field"><span>Texto de políticas de compra</span><input [(ngModel)]="profile.purchasePolicy" placeholder="Políticas de Compra" /></label>
-            <label class="field"><span>Crédito al pie del catálogo</span><input [(ngModel)]="profile.footerCredit" placeholder="Desarrollado por..." /></label>
-          </section>
-        }
-
-        @if (activeTab === 'preview') {
-          <section class="panel preview-full">
-            <header class="panel-heading"><span class="panel-icon">◉</span><div><h2>Vista previa del catálogo</h2><p>Ejemplo aproximado de cómo se verá la información compartida.</p></div></header>
-            <div class="catalog-preview">
-              <div class="preview-brand">
-                @if (profile.logoUrl) { <img [src]="profile.logoUrl" alt="Logo" /> } @else { <span class="logo-placeholder">♧</span> }
-                <div><small>FLORERÍA</small><h2>{{ profile.name || 'Nombre de tu florería' }}</h2><p>{{ profile.tagline }}</p></div>
-              </div>
-              @if (profile.coverUrl) { <img class="preview-cover" [src]="profile.coverUrl" alt="Portada" /> }
-              <p class="preview-description">{{ profile.description }}</p>
-              <div class="preview-footer" [style.--preview-color]="profile.primaryColor">
-                <div><h3>{{ profile.name }}</h3><p>{{ profile.description }}</p><p>{{ fullAddress }}</p></div>
-                <div><h3>Contáctanos</h3><p>{{ profile.primaryPhone }}</p><p>{{ profile.email }}</p><p>{{ profile.website }}</p><div class="preview-socials">@for (social of profile.socials; track $index) { <span [style.background]="socialMeta(social.network).color">{{ socialMeta(social.network).icon }}</span> }</div></div>
-                <div><h3>{{ profile.purchasePolicy || 'Políticas de Compra' }}</h3><p>{{ profile.payments.join(' · ') }}</p><small>{{ profile.footerCredit }}</small></div>
-              </div>
-            </div>
-          </section>
-        }
-
-        <div class="bottom-actions">
-          <span>Los cambios se compartirán en los catálogos Normal y VIP.</span>
-          <button class="primary-button" type="button" (click)="saveProfile(activeTab)" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar cambios' }}</button>
         </div>
-      </main>
 
-      <aside class="preview-aside">
-        <div class="aside-heading"><span class="panel-icon">◉</span><div><h2>Vista previa</h2><p>Información compartida en los catálogos</p></div></div>
-        <div class="mini-catalog">
+      }
+
+
+       @if (activeTab === 'contact') {
+          <section class="panel contact-panel">
+          <header class="panel-heading"><div><h2>Información de contacto</h2><p>Estos datos aparecerán en la sección “Contáctanos” del catálogo.</p></div></header>
+          <div class="contact-form-grid contact-form-grid-single">
+            <label class="field field-full phone-catalog-field">
+              <span>Teléfono principal para catálogo Normal <b>*</b></span>
+              <div class="phone-input-group">
+                <select [(ngModel)]="primaryPhoneNormalCountryCode" name="primaryPhoneNormalCountryCode" aria-label="País del teléfono principal del catálogo Normal" (ngModelChange)="onPrimaryPhoneCountryChange($event)">
+                  @for (country of phoneCountries; track country.code) { <option [value]="country.code">{{ country.flag }} {{ country.code }} {{ country.dialCode }}</option> }
+                </select>
+                <input [(ngModel)]="profile.primaryPhoneNormal" name="primaryPhoneNormal" type="tel" placeholder="722 123 4567" autocomplete="tel-national" required />
+              </div>
+              <small class="field-hint">Este número aparecerá únicamente en el catálogo Normal.</small>
+            </label>
+            <label class="field field-full phone-catalog-field">
+              <span>Teléfono principal para catálogo VIP <b>*</b></span>
+              <div class="phone-input-group">
+                <select [(ngModel)]="primaryPhoneVipCountryCode" name="primaryPhoneVipCountryCode" aria-label="País del teléfono principal del catálogo VIP" (ngModelChange)="onVipPhoneCountryChange($event)">
+                  @for (country of phoneCountries; track country.code) { <option [value]="country.code">{{ country.flag }} {{ country.code }} {{ country.dialCode }}</option> }
+                </select>
+                <input [(ngModel)]="profile.primaryPhoneVip" name="primaryPhoneVip" type="tel" placeholder="722 123 4567" autocomplete="tel-national" required />
+              </div>
+              <small class="field-hint">Este número aparecerá únicamente en el catálogo VIP.</small>
+            </label>
+            <label class="field field-full"><span>Correo electrónico </span><input [(ngModel)]="profile.email" name="profileEmail" type="email" placeholder="pedidos@tufloreria.com" autocomplete="email" /></label>
+            <label class="field field-full"><span>Página web </span><div class="input-icon-wrap"><span>◎</span><input [(ngModel)]="profile.website" name="profileWebsite" type="url" placeholder="https://tufloreria.com" autocomplete="url" /></div></label>
+          </div>
+          <div class="contact-actions">
+            <button type="button" class="catalog-primary-action" (click)="saveProfile('contact')" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar teléfonos y contacto' }}</button>
+          </div>
+          <p class="field-hint section-footnote">Los dos teléfonos son obligatorios. El correo electrónico, la página web y las redes sociales son opcionales.</p>
+        </section>
+      }
+
+      @if (activeTab === 'redes') {
+        <section class="panel">
+          <header class="panel-heading"><div><h2>Redes sociales</h2><p>Agrega hasta 5 redes sociales oficiales de tu florería.</p></div></header>
+          @for (social of profile.socials; track $index; let i = $index) {
+            <div class="social-row">
+              <span class="social-brand" [style.background]="socialMeta(social.network).color">{{ socialMeta(social.network).icon }}</span>
+              <select [(ngModel)]="social.network" [name]="'social-network-' + i" aria-label="Red social">
+                @for (network of socialNetworks; track network.id) { <option [value]="network.id">{{ network.label }}</option> }
+              </select>
+              <input [(ngModel)]="social.url" [name]="'social-url-' + i" type="url" [placeholder]="'URL de ' + socialMeta(social.network).label" />
+              <button type="button" class="icon-danger" (click)="removeSocial(i)" aria-label="Eliminar red social">×</button>
+            </div>
+          }
+          <button type="button" class="outline-button" (click)="addSocial()" [disabled]="profile.socials.length >= maxSocialNetworks || socialOptionsAvailable.length === 0">＋ Agregar red social</button>
+          <p class="field-hint">Puedes agregar hasta 5 redes sociales. Usa la URL completa del perfil o enlace de WhatsApp.</p>
+        
+        
+        <div class="bottom-actions"><span>Los cambios se compartirán en los catálogos Normal y VIP.</span><button class="catalog-primary-action" type="button" (click)="saveProfile(activeTab)" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar redes socialess' }}</button></div>
+    
+        </section>
+        
+      }
+
+      @if (activeTab === 'address') {
+        <section class="panel">
+          <header class="panel-heading"><div><h2>Dirección y mapa</h2><p>Facilita que tus clientes encuentren la florería o consulten la zona de atención.</p></div></header>
+          <label class="field"><span>Dirección completa </span><textarea [(ngModel)]="profile.address.street" name="addressStreet" rows="3" placeholder="Calle, número, colonia y referencias"></textarea></label>
+          <div class="form-grid two">
+            <label class="field"><span>Ciudad o municipio </span><input [(ngModel)]="profile.address.city" name="addressCity" placeholder="San Mateo Atenco" /></label>
+            <label class="field"><span>Estado </span><input [(ngModel)]="profile.address.state" name="addressState" placeholder="Estado de México" /></label>
+            <label class="field"><span>Código postal </span><input [(ngModel)]="profile.address.postalCode" name="addressPostalCode" inputmode="numeric" placeholder="52100" /></label>
+            <label class="field"><span>País</span><input [(ngModel)]="profile.address.country" name="addressCountry" placeholder="México" /></label>
+          </div>
+          <div class="subsection-heading"><div><h3>Ubicación en mapa</h3><p>Escribe la dirección o pega un enlace de Google Maps.</p></div></div>
+          <label class="field"><span>URL de Google Maps </span><input [(ngModel)]="profile.address.mapUrl" name="mapUrl" (blur)="onMapUrlBlur()" type="url" placeholder="Pega aquí el enlace de Google Maps" /><small class="field-hint">Al salir del campo intentaremos completar los datos disponibles. {{ resolvingMapUrl ? 'Detectando ubicación…' : '' }}</small></label>
+          <div class="map-preview"><div class="map-art"><span class="map-pin">●</span><span class="map-street street-one"></span><span class="map-street street-two"></span><span class="map-label">{{ profile.address.city || 'Tu ciudad' }}</span></div><div class="map-actions"><p>{{ fullAddress || 'Agrega una dirección o pega un enlace de Google Maps.' }}</p><button type="button" class="outline-button" (click)="openMap()" [disabled]="!mapPreviewUrl">Abrir en Google Maps ↗</button></div></div>
+          <button type="button" class="catalog-primary-action panel-save" (click)="saveProfile('address')" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar dirección y mapa' }}</button>
+        </section>
+      }
+
+      @if (activeTab === 'appearance') {
+        <section class="panel">
+          <header class="panel-heading"><div><h2>Apariencia en catálogos</h2><p>Personaliza elementos visuales compartidos por Normal y VIP.</p></div></header>
+          <label class="field color-field"><span>Color principal</span><div class="color-control"><input type="color" [(ngModel)]="profile.primaryColor" name="primaryColor" /><input [(ngModel)]="profile.primaryColor" name="primaryColorText" maxlength="7" /></div><small class="field-hint">Se usa en botones, iconos y detalles del catálogo.</small></label>
+          <div class="subsection-heading payment-heading"><div><h3>Métodos de pago</h3><p>Selecciona las formas de pago que aceptas. Se mostrarán en los catálogos Normal y VIP.</p></div></div>
+          <div class="payment-options payment-options-grid">
+            <label class="payment-option"><input type="checkbox" [checked]="paymentChecked('cash')" (change)="togglePayment('cash', $any($event.target).checked)" /><span class="payment-method-logo payment-cash">$</span><span class="payment-method-copy"><strong>Efectivo</strong><small>Pago en persona</small></span></label>
+            <label class="payment-option"><input type="checkbox" [checked]="paymentChecked('deposit')" (change)="togglePayment('deposit', $any($event.target).checked)" /><span class="payment-method-logo payment-bank">▤</span><span class="payment-method-copy"><strong>Depósitos</strong><small>Depósito bancario</small></span></label>
+            <label class="payment-option"><input type="checkbox" [checked]="paymentChecked('transfer')" (change)="togglePayment('transfer', $any($event.target).checked)" /><span class="payment-method-logo payment-spei">SPEI</span><span class="payment-method-copy"><strong>Transferencias</strong><small>Transferencia bancaria</small></span></label>
+            <label class="payment-option"><input type="checkbox" [checked]="paymentChecked('visa')" (change)="togglePayment('visa', $any($event.target).checked)" /><span class="payment-method-logo payment-visa">VISA</span><span class="payment-method-copy"><strong>Visa</strong><small>Tarjeta de crédito o débito</small></span></label>
+            <label class="payment-option"><input type="checkbox" [checked]="paymentChecked('mastercard')" (change)="togglePayment('mastercard', $any($event.target).checked)" /><span class="payment-method-logo payment-mastercard"><i></i><i></i></span><span class="payment-method-copy"><strong>Mastercard</strong><small>Tarjeta de crédito o débito</small></span></label>
+            <label class="payment-option"><input type="checkbox" [checked]="paymentChecked('amex')" (change)="togglePayment('amex', $any($event.target).checked)" /><span class="payment-method-logo payment-amex">AMEX</span><span class="payment-method-copy"><strong>American Express</strong><small>Tarjeta de crédito</small></span></label>
+            <label class="payment-option"><input type="checkbox" [checked]="paymentChecked('paypal')" (change)="togglePayment('paypal', $any($event.target).checked)" /><span class="payment-method-logo payment-paypal">P<span>PayPal</span></span><span class="payment-method-copy"><strong>PayPal</strong><small>Pago en línea</small></span></label>
+            <label class="payment-option"><input type="checkbox" [checked]="paymentChecked('mercado_pago')" (change)="togglePayment('mercado_pago', $any($event.target).checked)" /><span class="payment-method-logo payment-mercado">↔</span><span class="payment-method-copy"><strong>Mercado Pago</strong><small>Pago en línea</small></span></label>
+            <label class="payment-option"><input type="checkbox" [checked]="paymentChecked('oxxo')" (change)="togglePayment('oxxo', $any($event.target).checked)" /><span class="payment-method-logo payment-oxxo">OXXO</span><span class="payment-method-copy"><strong>OXXO</strong><small>Pago en tienda</small></span></label>
+          </div>
+          <button type="button" class="catalog-primary-action panel-save" (click)="saveProfile('appearance')" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar apariencia y métodos de pago' }}</button>
+        </section>
+      }
+
+      
+
+    </main>
+
+    <aside class="preview-aside">
+      <div class="aside-heading"><span class="panel-icon">◉</span><div><h2>Vista previa</h2><p>Así se verá tu florería en los catálogos.</p></div></div>
+      <div class="mini-catalog">
+        <div class="mini-catalog-status"><span class="active-pill"><i></i> Catálogo activo</span></div>
+        <div class="mini-catalog-body">
           <div class="mini-brand">
-            @if (profile.logoUrl) { <img [src]="profile.logoUrl" alt="Logo" /> } @else { <span class="logo-placeholder">♧</span> }
+            @if (profile.logoUrl) { <img class="mini-logo" [src]="profile.logoUrl" alt="Logo de la florería" /> }
+            @else { <span class="mini-logo logo-placeholder">♧</span> }
             <div><small>FLORERÍA</small><h3>{{ profile.name || 'Tu florería' }}</h3></div>
           </div>
-          @if (profile.coverUrl) { <img class="mini-cover" [src]="profile.coverUrl" alt="Portada" /> }
-          <p class="mini-tagline">{{ profile.tagline }}</p>
-          <h4>Contacto</h4>
-          <p>{{ profile.primaryPhone || 'Teléfono principal' }}</p><p>{{ profile.email || 'Correo electrónico' }}</p>
-          @if (profile.website) { <p>{{ profile.website }}</p> }
-          <div class="mini-socials">@for (social of profile.socials; track $index) { <span [style.background]="socialMeta(social.network).color">{{ socialMeta(social.network).icon }}</span> }</div>
-          <hr />
-          <h4>Dirección</h4><p>{{ fullAddress || 'Tu dirección aparecerá aquí' }}</p>
-          <button type="button" class="mini-map-button" (click)="openMap()" [disabled]="!mapPreviewUrl">Ver ubicación ↗</button>
-          <hr />
-          <h4>Métodos de pago</h4><p>{{ profile.payments.join(' · ') || 'Sin métodos seleccionados' }}</p>
-          <small>© 2026 {{ profile.name || 'Tu florería' }}</small>
+          @if (profile.tagline) { <p class="mini-tagline">{{ profile.tagline }}</p> }
+          @if (profile.description) { <p class="mini-description">{{ profile.description }}</p> }
+          <div class="preview-contact">
+            @if (profile.primaryPhoneNormal) { <p><span>♧</span><strong>Normal:</strong>&nbsp;{{ phoneCountry(primaryPhoneNormalCountryCode).dialCode }} {{ profile.primaryPhoneNormal }}</p> }
+            @if (profile.primaryPhoneVip) { <p><span>♧</span><strong>VIP:</strong>&nbsp;{{ phoneCountry(primaryPhoneVipCountryCode).dialCode }} {{ profile.primaryPhoneVip }}</p> }
+            @if (profile.email) { <p><span>✉</span>{{ profile.email }}</p> }
+            @if (profile.website) { <p><span>◎</span>{{ profile.website }}</p> }
+          </div>
+          @if (profile.socials.length) { <div class="mini-socials">@for (social of profile.socials; track $index) { <span [style.background]="socialMeta(social.network).color">{{ socialMeta(social.network).icon }}</span> }</div> }
+          @if (fullAddress || profile.address.mapUrl) {
+            <div class="mini-address"><span>⌖</span><div><strong>{{ profile.address.country || 'Ubicación' }}</strong><p>{{ addressPreview }}</p></div></div>
+            <div class="mini-map-art"><span class="map-grid-line"></span><span class="mini-map-pin">●</span><button type="button" (click)="openMap()" [disabled]="!mapPreviewUrl">Ver en Google Maps ↗</button></div>
+          }
+          <div class="mini-payment"><span>▤</span><div><strong>Métodos de pago</strong><p>{{ paymentLabels() }}</p></div></div>
         </div>
-        <div class="shared-note"><span>✓</span><p><strong>Una sola configuración</strong><br />Estos datos se guardan una vez y están destinados a los catálogos Normal y VIP.</p></div>
-      </aside>
+      </div>
+      <div class="shared-note"><span>✓</span><p><strong>Una sola configuración</strong><br />Estos datos se guardan una vez y están destinados a los catálogos Normal y VIP.</p></div>
+    </aside>
   </div>
 </div>

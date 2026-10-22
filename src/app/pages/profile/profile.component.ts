@@ -37,11 +37,11 @@ export class ProfileComponent implements OnInit {
   profile: StoreProfile = this.createEmptyProfile();
   readonly socialNetworks = SOCIAL_NETWORKS;
   readonly tabs = [
-    { id: 'general', label: 'Información general', icon: '▦' },
-    { id: 'contact', label: 'Contacto y redes', icon: '♧' },
-    { id: 'address', label: 'Dirección y mapa', icon: '⌖' },
-    { id: 'appearance', label: 'Apariencia', icon: '✿' },
-    { id: 'preview', label: 'Vista previa', icon: '◉' },
+    { id: 'general', label: 'Información general', icon: '' },
+    { id: 'contact', label: 'Teléfonos y contacto', icon: '' },
+    { id: 'redes', label: 'Redes sociales', icon: '' },
+    { id: 'address', label: 'Dirección y mapa', icon: '' },
+    { id: 'appearance', label: 'Apariencia y métodos de pago', icon: '' },
   ];
   activeTab = 'general';
   loading = false;
@@ -75,6 +75,8 @@ export class ProfileComponent implements OnInit {
     { code: 'DO', name: 'República Dominicana', dialCode: '+1', flag: '🇩🇴' },
   ];
   primaryPhoneCountryCode = 'MX';
+  primaryPhoneNormalCountryCode = 'MX';
+  primaryPhoneVipCountryCode = 'MX';
   private persistedProfile: StoreProfile = this.createEmptyProfile();
 
   async ngOnInit(): Promise<void> {
@@ -98,6 +100,13 @@ export class ProfileComponent implements OnInit {
   get fullAddress(): string {
     const a = this.profile.address;
     return [a.street, a.city, a.state, a.postalCode, a.country].filter(Boolean).join(', ');
+  }
+
+  get addressPreview(): string {
+    const address = this.profile.address;
+    return [address.street, address.city, address.state, address.postalCode]
+      .filter((part): part is string => Boolean(part?.trim()))
+      .join(', ');
   }
 
   get mapPreviewUrl(): string {
@@ -124,6 +133,14 @@ export class ProfileComponent implements OnInit {
         this.profile = {
           ...this.createEmptyProfile(),
           ...data,
+          // Si el documento de perfil aún no tiene logo, reutilizar el del tenant.
+          logoUrl: data.logoUrl || this.tenantContext.tenant?.logoUrl || '',
+          // Migración transparente: los perfiles anteriores solo tenían un teléfono principal.
+          // Se usa como valor inicial del catálogo Normal; no se pierde el dato original.
+          primaryPhoneNormal: data.primaryPhoneNormal ?? data.primaryPhone ?? '',
+          primaryPhoneNormalCountryCode: data.primaryPhoneNormalCountryCode ?? data.primaryPhoneCountryCode ?? 'MX',
+          primaryPhoneVip: data.primaryPhoneVip ?? '',
+          primaryPhoneVipCountryCode: data.primaryPhoneVipCountryCode ?? 'MX',
           phones: Array.isArray(data.phones) ? data.phones.slice(0, this.maxAdditionalPhones).map((phone) => ({ ...phone, countryCode: phone.countryCode || 'MX' })) : [],
           socials: Array.isArray(data.socials) ? data.socials.slice(0, this.maxSocialNetworks) : [],
           payments: Array.isArray(data.payments) ? data.payments : ['cash', 'deposit', 'transfer'],
@@ -136,7 +153,10 @@ export class ProfileComponent implements OnInit {
           logoUrl: this.tenantContext.tenant?.logoUrl ?? '',
         };
       }
-      this.primaryPhoneCountryCode = this.profile.primaryPhoneCountryCode || 'MX';
+      this.primaryPhoneNormalCountryCode = this.profile.primaryPhoneNormalCountryCode || this.profile.primaryPhoneCountryCode || 'MX';
+      this.primaryPhoneVipCountryCode = this.profile.primaryPhoneVipCountryCode || 'MX';
+      // Alias de compatibilidad para cualquier código anterior del perfil.
+      this.primaryPhoneCountryCode = this.primaryPhoneNormalCountryCode;
       this.persistedProfile = JSON.parse(JSON.stringify(this.profile)) as StoreProfile;
     } catch (error) {
       this.errorMessage = this.errorText(error, 'No fue posible cargar el perfil de la florería.');
@@ -155,9 +175,10 @@ export class ProfileComponent implements OnInit {
       const tenantId = this.requireTenantId();
       const sectionKeys: Record<string, (keyof StoreProfile)[]> = {
         general: ['name', 'tagline', 'description', 'logoUrl'],
-        contact: ['primaryPhone', 'primaryPhoneCountryCode', 'phones', 'email', 'website', 'socials'],
+        redes: [ 'socials'],
+        contact: ['primaryPhone', 'primaryPhoneCountryCode', 'primaryPhoneNormal', 'primaryPhoneNormalCountryCode', 'primaryPhoneVip', 'primaryPhoneVipCountryCode', 'email', 'website', 'socials'],
         address: ['address'],
-        appearance: ['primaryColor', 'coverUrl', 'payments', 'purchasePolicy', 'footerCredit'],
+        appearance: ['primaryColor', 'payments'],
         preview: [],
       };
       const keys = sectionKeys[section] ?? [];
@@ -174,19 +195,31 @@ export class ProfileComponent implements OnInit {
         if (!this.profile.name) throw new Error('El nombre de la florería es obligatorio.');
       }
 
-      if (section === 'contact') {
-        this.profile.primaryPhone = this.profile.primaryPhone.trim();
-        this.profile.email = this.profile.email.trim();
-        this.profile.website = this.profile.website.trim();
-        this.profile.phones = this.profile.phones
-          .map((phone) => ({ ...phone, number: phone.number.trim(), label: phone.label.trim() }))
-          .filter((phone) => phone.number)
-          .slice(0, this.maxAdditionalPhones);
+      if (section === 'redes') {
+       
         this.profile.socials = this.profile.socials
           .map((social) => ({ ...social, url: social.url.trim() }))
           .filter((social) => social.url)
           .slice(0, this.maxSocialNetworks);
-        if (!this.profile.primaryPhone) throw new Error('Agrega el teléfono principal en Contacto y redes.');
+      
+      }
+
+      if (section === 'contact') {
+        this.profile.primaryPhoneNormal = (this.profile.primaryPhoneNormal || '').trim();
+        this.profile.primaryPhoneVip = (this.profile.primaryPhoneVip || '').trim();
+        this.profile.email = (this.profile.email || '').trim();
+        this.profile.website = (this.profile.website || '').trim();
+        this.profile.socials = this.profile.socials
+          .map((social) => ({ ...social, url: social.url.trim() }))
+          .filter((social) => social.url)
+          .slice(0, this.maxSocialNetworks);
+        if (!this.profile.primaryPhoneNormal) throw new Error('El teléfono principal para Catálogo Normal es obligatorio.');
+        if (!this.profile.primaryPhoneVip) throw new Error('El teléfono principal para Catálogo VIP es obligatorio.');
+        // Mantener los campos antiguos sincronizados con Normal para compatibilidad.
+        this.profile.primaryPhone = this.profile.primaryPhoneNormal;
+        this.profile.primaryPhoneCountryCode = this.primaryPhoneNormalCountryCode;
+        this.profile.primaryPhoneNormalCountryCode = this.primaryPhoneNormalCountryCode;
+        this.profile.primaryPhoneVipCountryCode = this.primaryPhoneVipCountryCode;
       }
 
 
@@ -206,7 +239,10 @@ export class ProfileComponent implements OnInit {
         (sectionData as Record<string, unknown>)[key] = this.profile[key];
       }
       if (section === 'contact') {
-        sectionData.primaryPhoneCountryCode = this.primaryPhoneCountryCode;
+        sectionData.primaryPhone = this.profile.primaryPhoneNormal;
+        sectionData.primaryPhoneCountryCode = this.primaryPhoneNormalCountryCode;
+        sectionData.primaryPhoneNormalCountryCode = this.primaryPhoneNormalCountryCode;
+        sectionData.primaryPhoneVipCountryCode = this.primaryPhoneVipCountryCode;
       }
 
       await setDoc(
@@ -233,11 +269,12 @@ export class ProfileComponent implements OnInit {
   }
 
   onPrimaryPhoneCountryChange(code: string): void {
+    this.primaryPhoneNormalCountryCode = code;
     this.primaryPhoneCountryCode = code;
   }
 
-  onAdditionalPhoneCountryChange(index: number, code: string): void {
-    this.profile.phones[index].countryCode = code;
+  onVipPhoneCountryChange(code: string): void {
+    this.primaryPhoneVipCountryCode = code;
   }
 
   onLogoSelected(event: Event): void {
@@ -266,15 +303,6 @@ export class ProfileComponent implements OnInit {
     this.coverFile = file;
     this.profile.coverUrl = URL.createObjectURL(file);
     this.errorMessage = '';
-  }
-
-  addPhone(): void {
-    if (this.profile.phones.length >= this.maxAdditionalPhones) return;
-    this.profile.phones.push({ label: `Celular ${this.profile.phones.length + 1}`, number: '', countryCode: 'MX' });
-  }
-
-  removePhone(index: number): void {
-    this.profile.phones.splice(index, 1);
   }
 
   addSocial(): void {
@@ -381,6 +409,24 @@ export class ProfileComponent implements OnInit {
     } else {
       this.notifications.warning('El enlace no incluye una ubicación que pueda leerse automáticamente. Puedes dejar los campos vacíos y usar el enlace del mapa.', 'No se detectó la dirección');
     }
+  }
+
+  paymentLabels(): string {
+    const labels: Record<string, string> = {
+      cash: 'Efectivo',
+      deposit: 'Depósitos',
+      transfer: 'Transferencias',
+      visa: 'Visa',
+      mastercard: 'Mastercard',
+      amex: 'American Express',
+      paypal: 'PayPal',
+      mercado_pago: 'Mercado Pago',
+      oxxo: 'OXXO',
+    };
+    const selected = this.profile.payments
+      .map((payment) => labels[payment] ?? payment)
+      .filter(Boolean);
+    return selected.length ? selected.join(' · ') : 'Configura tus métodos de pago';
   }
 
   openMap(): void {

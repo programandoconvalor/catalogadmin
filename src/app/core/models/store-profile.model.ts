@@ -35,8 +35,15 @@ export interface StoreProfile {
   description: string;
   logoUrl: string;
   coverUrl: string;
+  /** Teléfono heredado: se mantiene por compatibilidad con catálogos antiguos. */
   primaryPhone: string;
   primaryPhoneCountryCode?: string;
+  /** Teléfonos independientes para los catálogos Normal y VIP. */
+  primaryPhoneNormal: string;
+  primaryPhoneNormalCountryCode: string;
+  primaryPhoneVip: string;
+  primaryPhoneVipCountryCode: string;
+  /** Campo heredado; se conserva para no romper datos guardados anteriormente. */
   phones: StorePhone[];
   email: string;
   website: string;
@@ -72,6 +79,10 @@ export const DEFAULT_STORE_PROFILE: StoreProfile = {
   coverUrl: '',
   primaryPhone: '',
   primaryPhoneCountryCode: 'MX',
+  primaryPhoneNormal: '',
+  primaryPhoneNormalCountryCode: 'MX',
+  primaryPhoneVip: '',
+  primaryPhoneVipCountryCode: 'MX',
   phones: [],
   email: '',
   website: '',
