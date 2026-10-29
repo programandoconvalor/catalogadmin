@@ -164,6 +164,12 @@ export class ProfileComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+
+if (!this.profile.logoUrl?.trim()) {
+  this.profile.logoUrl =
+    this.tenantContext.tenant?.logoUrl ?? '';
+}
+
   }
 
   async saveProfile(section: string = this.activeTab): Promise<void> {
@@ -473,4 +479,12 @@ export class ProfileComponent implements OnInit {
   private errorText(error: unknown, fallback: string): string {
     return error instanceof Error ? error.message : fallback;
   }
+
+  get logoPreviewUrl(): string {
+  return (
+    this.profile.logoUrl?.trim() ||
+    this.tenantContext.tenant?.logoUrl?.trim() ||
+    ''
+  );
+}
 }

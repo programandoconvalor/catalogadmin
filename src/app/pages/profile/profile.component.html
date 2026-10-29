@@ -38,9 +38,16 @@
               <p>La identidad que verán tus clientes en ambos catálogos.</p></div></header>
             <div class="branding-upload">
               <div class="logo-preview">
-                @if (profile.logoUrl) { <img [src]="profile.logoUrl" alt="Logo de la florería" /> }
-                @else { <span class="logo-placeholder">♧</span> }
-              </div>
+  @if (logoPreviewUrl) {
+    <img
+      [src]="logoPreviewUrl"
+      alt="Logo de la florería"
+      (error)="profile.logoUrl = ''"
+    />
+  } @else {
+    <span class="logo-placeholder">♧</span>
+  }
+</div>
               <label class="upload-drop">
                 <span class="upload-icon">↑</span><strong>{{ uploadingLogo ? 'Subiendo logo...' : 'Cambiar logo' }}</strong>
                 <small>JPG, PNG o WebP · Máx. 2 MB</small><small>Recomendado: 500 × 500 px</small>
@@ -178,10 +185,22 @@
         <div class="mini-catalog-status"><span class="active-pill"><i></i> Catálogo activo</span></div>
         <div class="mini-catalog-body">
           <div class="mini-brand">
-            @if (profile.logoUrl) { <img class="mini-logo" [src]="profile.logoUrl" alt="Logo de la florería" /> }
-            @else { <span class="mini-logo logo-placeholder">♧</span> }
-            <div><small>FLORERÍA</small><h3>{{ profile.name || 'Tu florería' }}</h3></div>
-          </div>
+  @if (logoPreviewUrl) {
+    <img
+      class="mini-logo"
+      [src]="logoPreviewUrl"
+      alt="Logo de la florería"
+      (error)="profile.logoUrl = ''"
+    />
+  } @else {
+    <span class="mini-logo logo-placeholder">♧</span>
+  }
+
+  <div>
+    <small>FLORERÍA</small>
+    <h3>{{ profile.name || 'Tu florería' }}</h3>
+  </div>
+</div>
           @if (profile.tagline) { <p class="mini-tagline">{{ profile.tagline }}</p> }
           @if (profile.description) { <p class="mini-description">{{ profile.description }}</p> }
           <div class="preview-contact">
