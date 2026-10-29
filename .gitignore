@@ -1,17 +1,34 @@
-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
-
-# Compiled output
+# =========================================================
+# Angular - Compiled output
+# =========================================================
 /dist
 /tmp
 /out-tsc
 /bazel-out
 
-# Node
+# =========================================================
+# Node.js - Dependencies and logs
+# =========================================================
 /node_modules
-npm-debug.log
-yarn-error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
+# =========================================================
+# Angular cache and test coverage
+# =========================================================
+/.angular/cache
+/coverage
+/.sass-cache
+/test-results
+/playwright-report
+/typings
+
+# =========================================================
 # IDEs and editors
+# =========================================================
 .idea/
 .project
 .classpath
@@ -19,6 +36,7 @@ yarn-error.log
 *.launch
 .settings/
 *.sublime-workspace
+.history/
 
 # Visual Studio Code
 .vscode/*
@@ -26,17 +44,61 @@ yarn-error.log
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-.history/*
 
-# Miscellaneous
-/.angular/cache
-.sass-cache/
-/connect.lock
-/coverage
-/libpeerconnection.log
-testem.log
-/typings
-
-# System files
+# =========================================================
+# Operating system and miscellaneous files
+# =========================================================
 .DS_Store
 Thumbs.db
+Desktop.ini
+/connect.lock
+/libpeerconnection.log
+testem.log
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# =========================================================
+# Local environment files and secrets
+# =========================================================
+.env
+.env.*
+!.env.example
+*.local
+
+# Angular environment overrides (local only)
+# Keep environment.ts and environment.development.ts tracked
+# until Firebase configuration has been migrated safely.
+# Do not ignore the existing Firebase environment files yet.
+
+# =========================================================
+# Firebase Admin SDK and service-account credentials
+# =========================================================
+serviceAccount*.json
+firebase-adminsdk*.json
+*-service-account*.json
+*service-account-key*.json
+
+# =========================================================
+# Private keys and certificates
+# =========================================================
+*.pem
+*.key
+*.p12
+*.pfx
+
+# =========================================================
+# Local Firebase emulator data
+# =========================================================
+/.firebase/
+/firebase-debug.log
+/firestore-debug.log
+/ui-debug.log
+/storage-debug.log
+
+# =========================================================
+# Build artifacts and generated files
+# =========================================================
+*.tsbuildinfo
+.angular/
