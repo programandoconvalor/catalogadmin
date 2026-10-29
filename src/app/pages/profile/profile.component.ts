@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject,ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   doc,
   getDoc,
+  getDocFromServer,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -34,6 +35,7 @@ import {
 export class ProfileComponent implements OnInit {
   private readonly tenantContext = inject(TenantContextService);
   private readonly notifications = inject(NotificationService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   profile: StoreProfile = this.createEmptyProfile();
   readonly socialNetworks = SOCIAL_NETWORKS;
@@ -124,53 +126,154 @@ export class ProfileComponent implements OnInit {
   }
 
   async loadProfile(): Promise<void> {
-    this.errorMessage = '';
-    try {
-      const tenantId = this.requireTenantId();
-      const profileRef = doc(db, 'tenants', tenantId, 'settings', 'storeProfile');
-      const snapshot = await getDoc(profileRef);
-      if (snapshot.exists()) {
-        const data = snapshot.data() as Partial<StoreProfile>;
-        this.profile = {
-          ...this.createEmptyProfile(),
-          ...data,
-          // Si el documento de perfil aún no tiene logo, reutilizar el del tenant.
-          logoUrl: data.logoUrl || this.tenantContext.tenant?.logoUrl || '',
-          // Migración transparente: los perfiles anteriores solo tenían un teléfono principal.
-          // Se usa como valor inicial del catálogo Normal; no se pierde el dato original.
-          primaryPhoneNormal: data.primaryPhoneNormal ?? data.primaryPhone ?? '',
-          primaryPhoneNormalCountryCode: data.primaryPhoneNormalCountryCode ?? data.primaryPhoneCountryCode ?? 'MX',
-          primaryPhoneVip: data.primaryPhoneVip ?? '',
-          primaryPhoneVipCountryCode: data.primaryPhoneVipCountryCode ?? 'MX',
-          phones: Array.isArray(data.phones) ? data.phones.slice(0, this.maxAdditionalPhones).map((phone) => ({ ...phone, countryCode: phone.countryCode || 'MX' })) : [],
-          socials: Array.isArray(data.socials) ? data.socials.slice(0, this.maxSocialNetworks) : [],
-          payments: Array.isArray(data.payments) ? data.payments : ['cash', 'deposit', 'transfer'],
-          address: { ...this.createEmptyProfile().address, ...(data.address ?? {}) },
-        };
-      } else {
-        this.profile = {
-          ...this.createEmptyProfile(),
-          name: this.tenantContext.tenant?.name ?? '',
-          logoUrl: this.tenantContext.tenant?.logoUrl ?? '',
-        };
-      }
-      this.primaryPhoneNormalCountryCode = this.profile.primaryPhoneNormalCountryCode || this.profile.primaryPhoneCountryCode || 'MX';
-      this.primaryPhoneVipCountryCode = this.profile.primaryPhoneVipCountryCode || 'MX';
-      // Alias de compatibilidad para cualquier código anterior del perfil.
-      this.primaryPhoneCountryCode = this.primaryPhoneNormalCountryCode;
-      this.persistedProfile = JSON.parse(JSON.stringify(this.profile)) as StoreProfile;
-    } catch (error) {
-      this.errorMessage = this.errorText(error, 'No fue posible cargar el perfil de la florería.');
-    } finally {
-      this.loading = false;
+  this.loading = true;
+  this.errorMessage = '';
+
+  try {
+    const tenantId = this.requireTenantId();
+
+    const profileRef = doc(
+      db,
+      'tenants',
+      tenantId,
+      'settings',
+      'storeProfile',
+    );
+
+    // Consultar explícitamente el servidor, no depender de la caché.
+    const snapshot = await getDocFromServer(profileRef);
+
+    console.log('[Profile] Documento consultado:', {
+      path: `tenants/${tenantId}/settings/storeProfile`,
+      exists: snapshot.exists(),
+    });
+
+    if (snapshot.exists()) {
+      const data = snapshot.data() as Partial<StoreProfile>;
+
+      console.log('[Profile] Datos recibidos de Firestore:', {
+        name: data.name,
+        tagline: data.tagline,
+        description: data.description,
+        logoUrlExists: Boolean(data.logoUrl),
+        primaryPhoneNormal: data.primaryPhoneNormal,
+        primaryPhoneVip: data.primaryPhoneVip,
+        email: data.email,
+        website: data.website,
+        address: data.address,
+        socials: data.socials,
+        payments: data.payments,
+        primaryColor: data.primaryColor,
+      });
+
+      this.profile = {
+        ...this.createEmptyProfile(),
+        ...data,
+
+        name:
+          typeof data.name === 'string'
+            ? data.name
+            : this.tenantContext.tenant?.name ?? '',
+
+        tagline:
+          typeof data.tagline === 'string'
+            ? data.tagline
+            : '',
+
+        description:
+          typeof data.description === 'string'
+            ? data.description
+            : '',
+
+        logoUrl:
+          typeof data.logoUrl === 'string' && data.logoUrl.trim()
+            ? data.logoUrl.trim()
+            : this.tenantContext.tenant?.logoUrl ?? '',
+
+        primaryPhoneNormal:
+          data.primaryPhoneNormal ?? data.primaryPhone ?? '',
+
+        primaryPhoneNormalCountryCode:
+          data.primaryPhoneNormalCountryCode ??
+          data.primaryPhoneCountryCode ??
+          'MX',
+
+        primaryPhoneVip: data.primaryPhoneVip ?? '',
+
+        primaryPhoneVipCountryCode:
+          data.primaryPhoneVipCountryCode ?? 'MX',
+
+        phones: Array.isArray(data.phones)
+          ? data.phones
+              .slice(0, this.maxAdditionalPhones)
+              .map((phone) => ({
+                ...phone,
+                countryCode: phone.countryCode || 'MX',
+              }))
+          : [],
+
+        socials: Array.isArray(data.socials)
+          ? data.socials.slice(0, this.maxSocialNetworks)
+          : [],
+
+        payments: Array.isArray(data.payments)
+          ? data.payments
+          : ['cash', 'deposit', 'transfer'],
+
+        address: {
+          ...this.createEmptyProfile().address,
+          ...(data.address ?? {}),
+        },
+      };
+    } else {
+      console.warn(
+        '[Profile] El documento storeProfile no existe para este tenant.',
+      );
+
+      this.profile = {
+        ...this.createEmptyProfile(),
+        name: this.tenantContext.tenant?.name ?? '',
+        logoUrl: this.tenantContext.tenant?.logoUrl ?? '',
+      };
     }
 
-if (!this.profile.logoUrl?.trim()) {
+    this.primaryPhoneNormalCountryCode =
+      this.profile.primaryPhoneNormalCountryCode ||
+      this.profile.primaryPhoneCountryCode ||
+      'MX';
+
+    this.primaryPhoneVipCountryCode =
+      this.profile.primaryPhoneVipCountryCode || 'MX';
+
+    this.primaryPhoneCountryCode =
+      this.primaryPhoneNormalCountryCode;
+
+    this.persistedProfile = JSON.parse(
+      JSON.stringify(this.profile),
+    ) as StoreProfile;
+  } catch (error) {
+    console.error(
+      '[Profile] Error al consultar Firestore:',
+      error,
+    );
+
+    this.errorMessage = this.errorText(
+      error,
+      'No fue posible cargar el perfil de la florería.',
+    );
+  } finally {
+  this.saving = false;
+  this.uploadingLogo = false;
+  this.uploadingCover = false;
+
+  this.cdr.detectChanges();
+}
+  
+  if (!this.profile.logoUrl?.trim()) {
   this.profile.logoUrl =
     this.tenantContext.tenant?.logoUrl ?? '';
 }
-
-  }
+}
 
   async saveProfile(section: string = this.activeTab): Promise<void> {
     if (this.saving) return;
@@ -285,6 +388,7 @@ if (!this.profile.logoUrl?.trim()) {
       this.saving = false;
       this.uploadingLogo = false;
       this.uploadingCover = false;
+      this.cdr.detectChanges();
     }
   }
 
