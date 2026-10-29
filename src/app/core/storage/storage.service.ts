@@ -19,7 +19,7 @@ const ALLOWED_IMAGES: Record<string, string[]> = {
   'image/webp': ['webp'],
 };
 const MANAGED_IMAGE_PATH =
-  /^tenants\/[^/]+\/catalogs\/(normal|vip)\/products\/images\/[^/]+$/;
+  /^tenants\/[^/]+\/(normal|vip)\/products\/images\/[^/]+$/;
 
 export function getProductImageValidationError(file: File): string | null {
   if (!ALLOWED_IMAGES[file.type]) {
@@ -80,7 +80,7 @@ export class StorageService {
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const fullPath =
-      `tenants/${tenantId}/catalogs/${catalogId}/products/images/` +
+      `tenants/${tenantId}/${catalogId}/products/images/` +
       `${safeCode}-${uniqueSuffix}.${extension}`;
     const fileReference = ref(storage, fullPath);
 

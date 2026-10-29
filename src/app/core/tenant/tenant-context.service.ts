@@ -355,161 +355,87 @@ export class TenantContextService {
        * ========================================
        */
 
-      const memberRef =
-        doc(
-          db,
-          'tenants',
-          tenantId,
-          'members',
-          uid
-        );
+      const memberRef = doc(
+        db,
+        'tenants',
+        tenantId,
+        'members',
+        uid
+      );
 
-      const memberSnapshot =
-        await getDoc(memberRef);
+      const memberSnapshot = await getDoc(memberRef);
 
-      if (
-        !memberSnapshot.exists()
-      ) {
+      let member: Member;
 
-        console.error(
-          '[TenantContext] No existe membership:',
-          {
-            tenantId,
-            uid,
-          }
-        );
-
-        this.error.set(
-          'Tu usuario no tiene permisos dentro de esta cuenta.'
-        );
-
-        this.context.set(null);
-
-        return null;
-      }
-
-      const memberData =
-        memberSnapshot.data();
-
-
-      /*
-       * ========================================
-       * 12. CREAR MEMBER
-       * ========================================
-       */
-
-      const member: Member = {
-
-        uid:
-          memberData['uid'] ?? uid,
-
-        email:
-          memberData['email'] ?? '',
-
-        role:
-          memberData['role'] as MemberRole,
-
-        status:
-          memberData['status'] as MemberStatus,
-
-        createdAt:
-          memberData['createdAt'],
-
-        updatedAt:
-          memberData['updatedAt'],
-      };
-
-
-      /*
-       * ========================================
-       * 13. VALIDAR MEMBERSHIP
-       * ========================================
-       */
-
-      if (
-        member.status !== 'active'
-      ) {
-
+      if (!memberSnapshot.exists()) {
+        /*
+         * Compatibilidad con cuentas cuyo documento espejo en
+         * tenants/{tenantId}/members/{uid} todavía no existe.
+         * userTenants/{uid} es la fuente de autorización que ya usa
+         * el login y las reglas actuales de Firestore.
+         */
         console.warn(
-          '[TenantContext] Membership inactivo:',
-          {
-            tenantId,
-            uid,
-          }
+          '[TenantContext] No existe documento espejo en members; se usará userTenants como fuente de autorización.',
+          { tenantId, uid }
         );
 
-        this.error.set(
-          'Tu usuario se encuentra inactivo.'
-        );
+        member = {
+          uid,
+          email: (userTenantData['email'] as string | undefined) ?? '',
+          role,
+          status,
+          createdAt: userTenantData['createdAt'],
+          updatedAt: userTenantData['updatedAt'],
+        };
+      } else {
+        const memberData = memberSnapshot.data();
 
-        this.context.set(null);
+        member = {
+          uid: (memberData['uid'] as string | undefined) ?? uid,
+          email: (memberData['email'] as string | undefined) ?? '',
+          role: memberData['role'] as MemberRole,
+          status: memberData['status'] as MemberStatus,
+          createdAt: memberData['createdAt'],
+          updatedAt: memberData['updatedAt'],
+        };
 
-        return null;
+        if (member.status !== 'active') {
+          console.warn(
+            '[TenantContext] Membership inactivo:',
+            { tenantId, uid }
+          );
+          this.error.set('Tu usuario se encuentra inactivo.');
+          this.context.set(null);
+          return null;
+        }
+
+        if (!validRoles.includes(member.role)) {
+          console.error(
+            '[TenantContext] Role inválido en membership:',
+            member.role
+          );
+          this.error.set(
+            'La configuración de permisos de tu cuenta no es válida.'
+          );
+          this.context.set(null);
+          return null;
+        }
+
+        if (role !== member.role) {
+          console.error(
+            '[TenantContext] Inconsistencia de roles.',
+            {
+              userTenantRole: role,
+              memberRole: member.role,
+            }
+          );
+          this.error.set(
+            'La configuración de permisos de tu cuenta no es válida.'
+          );
+          this.context.set(null);
+          return null;
+        }
       }
-
-
-      /*
-       * ========================================
-       * 14. VALIDAR ROLE DEL MEMBERSHIP
-       * ========================================
-       */
-
-      if (
-        !validRoles.includes(
-          member.role
-        )
-      ) {
-
-        console.error(
-          '[TenantContext] Role inválido en membership:',
-          member.role
-        );
-
-        this.error.set(
-          'La configuración de permisos de tu cuenta no es válida.'
-        );
-
-        this.context.set(null);
-
-        return null;
-      }
-
-
-      /*
-       * ========================================
-       * 15. VALIDAR COHERENCIA DEL ROLE
-       * ========================================
-       *
-       * userTenants/{uid}
-       *        ↓
-       *       role
-       *
-       * tenants/{tenantId}/members/{uid}
-       *        ↓
-       *       role
-       */
-
-      if (
-        role !== member.role
-      ) {
-
-        console.error(
-          '[TenantContext] Inconsistencia de roles.',
-          {
-            userTenantRole: role,
-            memberRole: member.role,
-          }
-        );
-
-        this.error.set(
-          'La configuración de permisos de tu cuenta no es válida.'
-        );
-
-        this.context.set(null);
-
-        return null;
-      }
-
 
       /*
        * ========================================
@@ -623,6 +549,25 @@ export class TenantContextService {
     return this.context();
   }
 
+  /**
+   * Actualiza en memoria la identidad visual del tenant después de guardar
+   * el perfil. Los componentes de header, sidebar y menú superior consumen
+   * context$ y se actualizan inmediatamente sin volver a iniciar sesión.
+   */
+  updateTenantBranding(name: string, logoUrl: string): void {
+    this.context.update((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        tenant: {
+          ...current.tenant,
+          name: name.trim() || current.tenant.name,
+          logoUrl: logoUrl.trim() || undefined,
+        },
+      };
+    });
+  }
 
   get tenantId(): string | null {
     return (

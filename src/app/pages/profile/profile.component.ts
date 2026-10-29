@@ -6,6 +6,7 @@ import {
   getDoc,
   serverTimestamp,
   setDoc,
+  updateDoc,
 } from 'firebase/firestore';
 import {
   getDownloadURL,
@@ -251,6 +252,23 @@ export class ProfileComponent implements OnInit {
         { merge: true },
       );
 
+      // El perfil del catálogo y el documento principal del tenant comparten
+      // el logo. Header, sidebar y menú superior leen tenants/{tenantId}.logoUrl.
+      // Sin sincronizar ambos documentos, el archivo se sube pero esos lugares
+      // continúan mostrando el icono predeterminado.
+      if (section === 'general') {
+        await updateDoc(doc(db, 'tenants', tenantId), {
+          name: this.profile.name,
+          logoUrl: this.profile.logoUrl || '',
+          updatedAt: serverTimestamp(),
+        });
+
+        this.tenantContext.updateTenantBranding(
+          this.profile.name,
+          this.profile.logoUrl || '',
+        );
+      }
+
       this.persistedProfile = { ...this.persistedProfile, ...sectionData } as StoreProfile;
       this.successMessage = `La sección "${this.tabs.find((tab) => tab.id === section)?.label ?? section}" se guardó correctamente.`;
       this.notifications.success(this.successMessage, 'Cambios guardados');
@@ -333,7 +351,10 @@ export class ProfileComponent implements OnInit {
   async uploadBrandAsset(tenantId: string, file: File, kind: 'logo' | 'cover'): Promise<string> {
     const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const safeName = `${kind}-${Date.now()}.${extension}`;
-    const assetRef = ref(storage, `tenants/${tenantId}/store-profile/${safeName}`);
+    const assetPath = kind === 'logo'
+      ? `tenants/${tenantId}/logo/images/${safeName}`
+      : `tenants/${tenantId}/branding/cover/images/${safeName}`;
+    const assetRef = ref(storage, assetPath);
     await uploadBytes(assetRef, file, { contentType: file.type });
     return getDownloadURL(assetRef);
   }

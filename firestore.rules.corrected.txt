@@ -1,0 +1,121 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function userTenantPath(uid) {
+      return /databases/$(database)/documents/userTenants/$(uid);
+    }
+
+    function isMappedToTenant(tenantId) {
+      return isAuthenticated()
+        && exists(userTenantPath(request.auth.uid))
+        && get(userTenantPath(request.auth.uid)).data.tenantId == tenantId
+        && get(userTenantPath(request.auth.uid)).data.status == 'active';
+    }
+
+    function mappedRole(tenantId) {
+      return isMappedToTenant(tenantId)
+        ? get(userTenantPath(request.auth.uid)).data.role
+        : null;
+    }
+
+    function hasValidRole(role) {
+      return role is string
+        && role in ['owner', 'admin', 'editor', 'viewer'];
+    }
+
+    // userTenants es la asignación autoritativa administrada por el servidor.
+    function isActiveMember(tenantId) {
+      return isMappedToTenant(tenantId)
+        && hasValidRole(mappedRole(tenantId));
+    }
+
+    function hasRole(tenantId, role) {
+      return isActiveMember(tenantId)
+        && mappedRole(tenantId) == role;
+    }
+
+    function canManage(tenantId) {
+      return hasRole(tenantId, 'owner')
+        || hasRole(tenantId, 'admin');
+    }
+
+    function canEdit(tenantId) {
+      return canManage(tenantId)
+        || hasRole(tenantId, 'editor');
+    }
+
+    match /userTenants/{uid} {
+      allow get: if isAuthenticated() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /tenants/{tenantId} {
+      allow get: if isActiveMember(tenantId);
+      allow list: if false;
+      allow update: if canManage(tenantId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['name', 'logoUrl', 'updatedAt']);
+      allow create, delete: if false;
+
+      match /members/{uid} {
+        allow get: if isAuthenticated() && (
+          request.auth.uid == uid || canManage(tenantId)
+        );
+        allow list: if canManage(tenantId);
+        allow create, update, delete: if canManage(tenantId);
+      }
+
+      match /catalogs/{catalogId} {
+        allow read: if isActiveMember(tenantId);
+        allow create, update, delete: if canEdit(tenantId);
+        match /items/{itemId} {
+          allow read: if isActiveMember(tenantId);
+          allow create, update, delete: if canEdit(tenantId);
+        }
+      }
+
+      match /products/{productId} {
+        allow read: if isActiveMember(tenantId);
+        allow create, update, delete: if canEdit(tenantId);
+      }
+
+      match /categories/{categoryId} {
+        allow read: if isActiveMember(tenantId);
+        allow create, update, delete: if canEdit(tenantId);
+      }
+
+      match /deliveryZones/{zoneId} {
+        allow read: if isActiveMember(tenantId);
+        allow create, update, delete: if canEdit(tenantId);
+      }
+
+      match /settings/{settingId} {
+        allow read: if isActiveMember(tenantId);
+        allow create, update, delete: if canManage(tenantId);
+      }
+    }
+
+    match /plans/{planId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAuthenticated()
+        && resource.data.tenantId is string
+        && isActiveMember(resource.data.tenantId);
+      allow write: if false;
+    }
+
+    match /platformUsers/{uid} {
+      allow get: if isAuthenticated() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+  }
+}
