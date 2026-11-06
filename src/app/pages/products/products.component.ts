@@ -168,7 +168,7 @@ export class ProductsComponent implements OnInit {
 
     name: ['', [Validators.required, Validators.pattern(/\S/)]],
 
-    description: ['', [Validators.maxLength(3000)]],
+    description: ['', [Validators.maxLength(500)]],
 
     price: [0, [Validators.required, Validators.min(0)]],
 
@@ -1423,11 +1423,13 @@ export class ProductsComponent implements OnInit {
 
 
 
-  addInclude(): void {
-
-    this.includes.push(this.formBuilder.control(''));
-
+addInclude(): void {
+  if (this.includes.length >= 3) {
+    return;
   }
+
+  this.includes.push(this.formBuilder.control(''));
+}
 
 
 
