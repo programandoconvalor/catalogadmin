@@ -21,6 +21,7 @@ import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { ResetPasswordComponent } from './pages/auth-pages/reset-password/reset-password.component';
 import { CalenderComponent } from './pages/calender/calender.component';
 import { CatalogPageComponent } from './pages/catalog/catalog-page.component';
+import { ProductsComponent } from './pages/products/products.component';
 
 import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
@@ -32,129 +33,113 @@ export const routes: Routes = [
   {
     path: '',
     component: AppLayoutComponent,
-
-    // 🔐 Todas las rutas dentro de AppLayout requieren autenticación
     canActivate: [authGuard],
-
     children: [
+      // =====================================================
+      // CATALOGS
+      // =====================================================
       {
-        path: 'catalogs/normal',
-        component: CatalogPageComponent,
-        data: { catalogId: 'normal' },
-        title: 'Administración de Catálogos para Florerías',
+        path: 'catalogs',
+        children: [
+          {
+            path: 'products',
+            component: ProductsComponent,
+            title: 'Productos',
+          },
+          {
+            path: 'normal',
+            component: CatalogPageComponent,
+            data: { catalogId: 'normal' },
+            title: 'Catálogo Normal',
+          },
+          {
+            path: 'vip',
+            component: CatalogPageComponent,
+            data: { catalogId: 'vip' },
+            title: 'Catálogo VIP',
+          },
+        ],
       },
 
-      {
-        path: 'catalogs/vip',
-        component: CatalogPageComponent,
-        data: { catalogId: 'vip' },
-        title: 'Administración de Catálogos para Florerías',
-      },
-
+      // =====================================================
+      // DASHBOARD
+      // =====================================================
       {
         path: '',
         component: EcommerceComponent,
         pathMatch: 'full',
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Administración de Catálogos para Florerías',
       },
 
       {
         path: 'calendar',
         component: CalenderComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Calendario',
       },
-
       {
         path: 'profile',
         component: ProfileComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Perfil',
       },
-
       {
         path: 'form-elements',
         component: FormElementsComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Elementos de formulario',
       },
-
       {
         path: 'basic-tables',
         component: BasicTablesComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Tablas',
       },
-
       {
         path: 'blank',
         component: BlankComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Página en blanco',
       },
-
       {
         path: 'invoice',
         component: InvoicesComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Facturas',
       },
-
       {
         path: 'line-chart',
         component: LineChartComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Gráfica de líneas',
       },
-
       {
         path: 'bar-chart',
         component: BarChartComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Gráfica de barras',
       },
-
       {
         path: 'alerts',
         component: AlertsComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Alertas',
       },
-
       {
         path: 'avatars',
         component: AvatarElementComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Avatares',
       },
-
       {
         path: 'badge',
         component: BadgesComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Insignias',
       },
-
       {
         path: 'buttons',
         component: ButtonsComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Botones',
       },
-
       {
         path: 'images',
         component: ImagesComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Imágenes',
       },
-
       {
         path: 'videos',
         component: VideosComponent,
-        title:
-          'Administración de Catálogos para Florerías',
+        title: 'Videos',
       },
     ],
   },
@@ -162,34 +147,30 @@ export const routes: Routes = [
   // =========================================================
   // PUBLIC / AUTH ROUTES
   // =========================================================
-
   {
     path: 'signin',
     component: SignInComponent,
     canActivate: [guestGuard],
-    title: 'Administración de Catálogos para Florerías',
+    title: 'Iniciar sesión',
   },
-
   {
     path: 'signup',
     component: SignUpComponent,
     canActivate: [guestGuard],
-    title: 'Administración de Catálogos para Florerías',
+    title: 'Registro',
   },
-
   {
     path: 'reset-password',
     component: ResetPasswordComponent,
-    title: 'Administración de Catálogos para Florerías',
+    title: 'Recuperar contraseña',
   },
 
   // =========================================================
   // 404
   // =========================================================
-
   {
     path: '**',
     component: NotFoundComponent,
-    title: 'Administración de Catálogos para Florerías',
+    title: 'Página no encontrada',
   },
 ];

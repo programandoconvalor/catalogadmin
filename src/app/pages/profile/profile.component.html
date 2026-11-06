@@ -204,8 +204,8 @@
           @if (profile.tagline) { <p class="mini-tagline">{{ profile.tagline }}</p> }
           @if (profile.description) { <p class="mini-description">{{ profile.description }}</p> }
           <div class="preview-contact">
-            @if (profile.primaryPhoneNormal) { <p><span>♧</span><strong>Normal:</strong>&nbsp;{{ phoneCountry(primaryPhoneNormalCountryCode).dialCode }} {{ profile.primaryPhoneNormal }}</p> }
-            @if (profile.primaryPhoneVip) { <p><span>♧</span><strong>VIP:</strong>&nbsp;{{ phoneCountry(primaryPhoneVipCountryCode).dialCode }} {{ profile.primaryPhoneVip }}</p> }
+            @if (profile.primaryPhoneNormal) { <p><strong>Teléfono principal para catálogo normal</strong>&nbsp;{{ phoneCountry(primaryPhoneNormalCountryCode).dialCode }} {{ profile.primaryPhoneNormal }}</p> }
+            @if (profile.primaryPhoneVip) { <p><strong>Teléfono principal para catálogo VIP</strong>&nbsp;{{ phoneCountry(primaryPhoneVipCountryCode).dialCode }} {{ profile.primaryPhoneVip }}</p> }
             @if (profile.email) { <p><span>✉</span>{{ profile.email }}</p> }
             @if (profile.website) { <p><span>◎</span>{{ profile.website }}</p> }
           </div>

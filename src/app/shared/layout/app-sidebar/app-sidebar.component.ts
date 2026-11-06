@@ -48,34 +48,60 @@ type NavItem = {
 })
 export class AppSidebarComponent implements OnInit, OnDestroy {
   navItems: NavItem[] = [
-    
     {
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 2C8.41421 2 8.75 2.33579 8.75 2.75V3.75H15.25V2.75C15.25 2.33579 15.5858 2 16 2C16.4142 2 16.75 2.33579 16.75 2.75V3.75H18.5C19.7426 3.75 20.75 4.75736 20.75 6V9V19C20.75 20.2426 19.7426 21.25 18.5 21.25H5.5C4.25736 21.25 3.25 20.2426 3.25 19V9V6C3.25 4.75736 4.25736 3.75 5.5 3.75H7.25V2.75C7.25 2.33579 7.58579 2 8 2ZM8 5.25H5.5C5.08579 5.25 4.75 5.58579 4.75 6V8.25H19.25V6C19.25 5.58579 18.9142 5.25 18.5 5.25H16H8ZM19.25 9.75H4.75V19C4.75 19.4142 5.08579 19.75 5.5 19.75H18.5C18.9142 19.75 19.25 19.4142 19.25 19V9.75Z" fill="currentColor"></path></svg>`,
-      name: 'Catálogos',
-      subItems: [
-        {
-          name: 'Catálogo Normal',
-          path: '/catalogs/normal',
-        },
-        {
-          name: 'Catálogo VIP',
-          path: '/catalogs/vip',
-        },
-      ],
+      name: 'Logo y Nombre',
+      path: '/profile',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>`,
     },
     {
-      icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.75L19.5 6.5V17.5L12 21.25L4.5 17.5V6.5L12 2.75ZM6 7.42705V16.5729L11.25 19.1979V10.0521L6 7.42705ZM12.75 10.0521V19.1979L18 16.5729V7.42705L12.75 10.0521ZM7.67705 6.58852L12 8.75L16.3229 6.58852L12 4.42705L7.67705 6.58852Z" fill="currentColor"></path></svg>`,
-      name: 'Politicas',
-      path: '/policies',
+      name: 'Categorías',
+      path: '/catalogs/normal',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83V3H4v7h.83l9.58 9.59a2 2 0 0 0 2.83 0l3.35-3.35a2 2 0 0 0 0-2.83Z"/><circle cx="7.5" cy="7.5" r=".5"/></svg>`,
     },
-    
+    {
+  name: 'Productos',
+  path: '/catalogs/products',
+  icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.3 7.6 7.7 4.3 7.7-4.3M12 21v-9.1M8 5.2l8 4.5"/></svg>`,
+},
+    {
+      name: 'Redes Sociales',
+      path: '/profile',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4m-6.6 7 6.6 4.4"/></svg>`,
+    },
+    {
+      name: 'Contacto',
+      path: '/profile',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 2.8a2 2 0 0 1-.6 1.9L7.7 9.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 1.9-.6l2.8.5a2 2 0 0 1 1.7 2.6Z"/></svg>`,
+    },
+    {
+      name: 'Entregas y Envíos',
+      path: '/profile',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h11v12H3zM14 10h4l3 3v5h-7z"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="17.5" cy="18.5" r="1.5"/></svg>`,
+    },
+    {
+      name: 'Ubicación',
+      path: '/profile',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/><path d="M9 3v15m6-12v15"/></svg>`,
+    },
+    {
+      name: 'Métodos de Pago',
+      path: '/profile',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20m-15 5h3"/></svg>`,
+    },
+    {
+      name: 'Configuración',
+      path: '/profile',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.6-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.6 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2Z"/></svg>`,
+    },
   ];
 
-  othersItems: NavItem[] = [
-    
-  ];
+  othersItems: NavItem[] = [];
 
-  openSubmenu: string | null | number = null;
+  // Control del elemento seleccionado.
+  activeMenuItem: string | null = null;
+
+  // Control del menú desplegable.
+  openSubmenu: string | null = null;
 
   subMenuHeights: {
     [key: string]: number;
@@ -89,6 +115,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
   readonly isHovered$;
 
   private subscription: Subscription = new Subscription();
+
   private readonly failedTenantLogoUrl = signal<string | null>(null);
 
   constructor(
@@ -107,6 +134,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       this.tenantContextService.context$()?.tenant.name.trim() ||
       'Florería',
   );
+
   readonly tenantLogoUrl = computed(() => {
     const logoUrl =
       this.tenantContextService.context$()?.tenant.logoUrl?.trim();
@@ -116,7 +144,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       : null;
   });
 
-  onTenantLogoError() {
+  onTenantLogoError(): void {
     const logoUrl =
       this.tenantContextService.tenant?.logoUrl?.trim();
 
@@ -129,7 +157,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.router.events.subscribe((event) => {
         if (event instanceof NavigationEnd) {
-          this.setActiveMenuFromRoute(this.router.url);
+          this.setActiveMenuFromRoute(event.urlAfterRedirects);
         }
       })
     );
@@ -153,28 +181,44 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
 
-  isActive(path: string): boolean {
-    return this.router.url === path;
+  /**
+   * Comprueba si una opción específica está seleccionada.
+   * Compara por nombre, no por URL, porque temporalmente
+   * varias opciones comparten la misma ruta.
+   */
+  isActive(name: string): boolean {
+    return this.activeMenuItem === name;
   }
 
+  /**
+   * Selecciona exclusivamente una opción del menú.
+   */
+  selectMenuItem(name: string): void {
+    this.activeMenuItem = name;
+  }
+
+  /**
+   * Controla la apertura y cierre de submenús.
+   */
   toggleSubmenu(section: string, index: number): void {
     const key = `${section}-${index}`;
 
     if (this.openSubmenu === key) {
       this.openSubmenu = null;
       this.subMenuHeights[key] = 0;
-    } else {
-      this.openSubmenu = key;
-
-      setTimeout(() => {
-        const element = document.getElementById(key);
-
-        if (element) {
-          this.subMenuHeights[key] = element.scrollHeight;
-          this.cdr.detectChanges();
-        }
-      });
+      return;
     }
+
+    this.openSubmenu = key;
+
+    setTimeout(() => {
+      const element = document.getElementById(key);
+
+      if (element) {
+        this.subMenuHeights[key] = element.scrollHeight;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   onSidebarMouseEnter(): void {
@@ -187,42 +231,68 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       .unsubscribe();
   }
 
+  /**
+   * Sincroniza el menú desplegable con la ruta.
+   *
+   * No selecciona opciones individuales por URL porque
+   * varias comparten temporalmente /profile y /catalogs/normal.
+   * La selección individual se controla mediante selectMenuItem().
+   */
   private setActiveMenuFromRoute(currentUrl: string): void {
-    const menuGroups = [
-      {
-        items: this.navItems,
-        prefix: 'main',
-      },
-      {
-        items: this.othersItems,
-        prefix: 'others',
-      },
-    ];
+  const cleanUrl = currentUrl.split('?')[0].split('#')[0];
 
-    menuGroups.forEach((group) => {
-      group.items.forEach((nav, index) => {
-        if (!nav.subItems) {
-          return;
+  // Rutas que identifican una opción única del menú.
+  const routeMenuMap: Record<string, string> = {
+    '/catalogs/products': 'Productos',
+  };
+
+  const activeItem = routeMenuMap[cleanUrl];
+
+  if (activeItem) {
+    this.activeMenuItem = activeItem;
+  }
+
+  // Conservamos el comportamiento de los submenús existentes.
+  const menuGroups = [
+    {
+      items: this.navItems,
+      prefix: 'main',
+    },
+    {
+      items: this.othersItems,
+      prefix: 'others',
+    },
+  ];
+
+  menuGroups.forEach((group) => {
+    group.items.forEach((nav, index) => {
+      if (!nav.subItems) {
+        return;
+      }
+
+      const hasActiveSubItem = nav.subItems.some(
+        (subItem) => cleanUrl === subItem.path,
+      );
+
+      if (!hasActiveSubItem) {
+        return;
+      }
+
+      const key = `${group.prefix}-${index}`;
+
+      this.openSubmenu = key;
+
+      setTimeout(() => {
+        const element = document.getElementById(key);
+
+        if (element) {
+          this.subMenuHeights[key] = element.scrollHeight;
+          this.cdr.detectChanges();
         }
-
-        nav.subItems.forEach((subItem) => {
-          if (currentUrl === subItem.path) {
-            const key = `${group.prefix}-${index}`;
-            this.openSubmenu = key;
-
-            setTimeout(() => {
-              const element = document.getElementById(key);
-
-              if (element) {
-                this.subMenuHeights[key] = element.scrollHeight;
-                this.cdr.detectChanges();
-              }
-            });
-          }
-        });
       });
     });
-  }
+  });
+}
 
   onSubmenuClick(): void {
     this.isMobileOpen$

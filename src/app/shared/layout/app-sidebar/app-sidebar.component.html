@@ -1,24 +1,32 @@
+
 <aside
   class="fixed flex flex-col top-0 px-5 start-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-e border-gray-200 xl:translate-x-0"
   [ngClass]="{
     'w-[290px]':
-      (isExpanded$ | async) || (isMobileOpen$ | async) || (isHovered$ | async),
+      (isExpanded$ | async) ||
+      (isMobileOpen$ | async) ||
+      (isHovered$ | async),
     'w-[90px]': !(
       (isExpanded$ | async) ||
       (isMobileOpen$ | async) ||
       (isHovered$ | async)
     ),
     'translate-x-0': isMobileOpen$ | async,
-    'max-xl:-translate-x-full max-xl:rtl:translate-x-full': !(isMobileOpen$ | async)
+    'max-xl:-translate-x-full max-xl:rtl:translate-x-full':
+      !(isMobileOpen$ | async)
   }"
   (mouseenter)="onSidebarMouseEnter()"
   (mouseleave)="sidebarService.setHovered(false)"
 >
+  <!-- LOGO Y NOMBRE DE LA FLORERÍA -->
   <div
     class="flex py-8"
     [ngClass]="{
-      'xl:justify-center': !((isExpanded$ | async) || (isHovered$ | async)),
-      'justify-start': (isExpanded$ | async) || (isHovered$ | async)
+      'xl:justify-center': !(
+        (isExpanded$ | async) || (isHovered$ | async)
+      ),
+      'justify-start':
+        (isExpanded$ | async) || (isHovered$ | async)
     }"
   >
     <a
@@ -46,17 +54,29 @@
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-50 text-pink-600 dark:bg-pink-950/40 dark:text-pink-300"
             aria-hidden="true"
           >
-            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+            <svg
+              class="h-6 w-6"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
               <circle cx="12" cy="6.5" r="3.2" />
               <circle cx="17.2" cy="9.8" r="3.2" />
               <circle cx="15.2" cy="16" r="3.2" />
               <circle cx="8.8" cy="16" r="3.2" />
               <circle cx="6.8" cy="9.8" r="3.2" />
-              <circle cx="12" cy="11.2" r="2.5" class="text-pink-500 dark:text-pink-200" />
+              <circle
+                cx="12"
+                cy="11.2"
+                r="2.5"
+                class="text-pink-500 dark:text-pink-200"
+              />
             </svg>
           </span>
         }
-        <span class="max-w-[180px] truncate text-base font-semibold text-gray-900 dark:text-white">
+
+        <span
+          class="max-w-[180px] truncate text-base font-semibold text-gray-900 dark:text-white"
+        >
           {{ tenantName() }}
         </span>
       } @else {
@@ -74,13 +94,22 @@
             class="flex h-10 w-10 items-center justify-center rounded-full bg-pink-50 text-pink-600 dark:bg-pink-950/40 dark:text-pink-300"
             aria-hidden="true"
           >
-            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+            <svg
+              class="h-6 w-6"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
               <circle cx="12" cy="6.5" r="3.2" />
               <circle cx="17.2" cy="9.8" r="3.2" />
               <circle cx="15.2" cy="16" r="3.2" />
               <circle cx="8.8" cy="16" r="3.2" />
               <circle cx="6.8" cy="9.8" r="3.2" />
-              <circle cx="12" cy="11.2" r="2.5" class="text-pink-500 dark:text-pink-200" />
+              <circle
+                cx="12"
+                cy="11.2"
+                r="2.5"
+                class="text-pink-500 dark:text-pink-200"
+              />
             </svg>
           </span>
         }
@@ -88,11 +117,14 @@
     </a>
   </div>
 
-  <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+  <!-- CONTENIDO DEL MENÚ -->
+  <div
+    class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar"
+  >
     <nav class="mb-6">
       <div class="flex flex-col gap-4">
 
-        <!-- Menu Section -->
+        <!-- MENÚ PRINCIPAL -->
         <div>
           <h2
             class="mb-4 text-xs uppercase flex leading-[20px] text-gray-400"
@@ -100,7 +132,8 @@
               'xl:justify-center': !(
                 (isExpanded$ | async) || (isHovered$ | async)
               ),
-              'justify-start': (isExpanded$ | async) || (isHovered$ | async)
+              'justify-start':
+                (isExpanded$ | async) || (isHovered$ | async)
             }"
           >
             @if (
@@ -108,7 +141,7 @@
               (isHovered$ | async) ||
               (isMobileOpen$ | async)
             ) {
-              Menu
+              CATÁLOGO
             } @else {
               <svg
                 width="1em"
@@ -129,29 +162,40 @@
           </h2>
 
           <ul class="flex flex-col gap-1">
-            @for (nav of navItems; track $index; let i = $index) {
+            @for (nav of navItems; track nav.name; let i = $index) {
               <li>
                 @if (nav.subItems) {
+                  <!-- OPCIÓN CON SUBMENÚ -->
                   <button
+                    type="button"
                     (click)="toggleSubmenu('main', i)"
                     class="menu-item group cursor-pointer"
-                    [class.menu-item-active]="openSubmenu === 'main-' + i"
-                    [class.menu-item-inactive]="openSubmenu !== 'main-' + i"
+                    [class.menu-item-active]="
+                      openSubmenu === 'main-' + i
+                    "
+                    [class.menu-item-inactive]="
+                      openSubmenu !== 'main-' + i
+                    "
                     [ngClass]="{
                       'xl:justify-center': !(
-                        (isExpanded$ | async) || (isHovered$ | async)
+                        (isExpanded$ | async) ||
+                        (isHovered$ | async)
                       ),
                       'xl:justify-start':
-                        (isExpanded$ | async) || (isHovered$ | async)
+                        (isExpanded$ | async) ||
+                        (isHovered$ | async)
                     }"
                   >
                     <span
                       class="menu-item-icon-size"
-                      [class.menu-item-icon-active]="openSubmenu === 'main-' + i"
-                      [class.menu-item-icon-inactive]="openSubmenu !== 'main-' + i"
+                      [class.menu-item-icon-active]="
+                        openSubmenu === 'main-' + i
+                      "
+                      [class.menu-item-icon-inactive]="
+                        openSubmenu !== 'main-' + i
+                      "
                       [innerHTML]="nav.icon | safeHtml"
-                    >
-                    </span>
+                    ></span>
 
                     @if (
                       (isExpanded$ | async) ||
@@ -161,34 +205,7 @@
                       <span class="menu-item-text">
                         {{ nav.name }}
                       </span>
-                    }
 
-                    @if (
-                      nav.new &&
-                      (
-                        (isExpanded$ | async) ||
-                        (isHovered$ | async) ||
-                        (isMobileOpen$ | async)
-                      )
-                    ) {
-                      <span
-                        class="ms-auto absolute end-10 menu-dropdown-badge"
-                        [ngClass]="{
-                          'menu-dropdown-badge-active':
-                            openSubmenu === 'main-' + i,
-                          'menu-dropdown-badge-inactive':
-                            openSubmenu !== 'main-' + i
-                        }"
-                      >
-                        new
-                      </span>
-                    }
-
-                    @if (
-                      (isExpanded$ | async) ||
-                      (isHovered$ | async) ||
-                      (isMobileOpen$ | async)
-                    ) {
                       <svg
                         [ngClass]="{
                           'rotate-180 text-brand-500':
@@ -199,7 +216,7 @@
                         viewBox="0 0 20 20"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
-                        class="ms-auto w-5 h-5 transition-transform duration-200"
+                        class="ms-auto h-5 w-5 transition-transform duration-200"
                       >
                         <path
                           d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396"
@@ -212,6 +229,7 @@
                     }
                   </button>
 
+                  <!-- ELEMENTOS DEL SUBMENÚ -->
                   <div
                     class="overflow-hidden transition-all duration-300"
                     [id]="'main-' + i"
@@ -230,31 +248,38 @@
                     }"
                   >
                     <ul class="mt-2 space-y-1 ms-9">
-                      @for (subItem of nav.subItems; track $index) {
+                      @for (
+                        subItem of nav.subItems;
+                        track subItem.name
+                      ) {
                         <li>
                           <a
                             [routerLink]="subItem.path"
-                            routerLinkActive=""
-                            (click)="onSubmenuClick()"
+                            (click)="
+                              selectMenuItem(subItem.name);
+                              onSubmenuClick()
+                            "
                             class="menu-dropdown-item"
                             [ngClass]="{
-                              'menu-dropdown-item-inactive':
-                                !isActive(subItem.path),
                               'menu-dropdown-item-active':
-                                isActive(subItem.path)
+                                isActive(subItem.name),
+                              'menu-dropdown-item-inactive':
+                                !isActive(subItem.name)
                             }"
                           >
                             {{ subItem.name }}
 
-                            <span class="flex items-center gap-1 ms-auto">
+                            <span
+                              class="flex items-center gap-1 ms-auto"
+                            >
                               @if (subItem.new) {
                                 <span
                                   class="menu-dropdown-badge"
                                   [ngClass]="{
                                     'menu-dropdown-badge-active':
-                                      isActive(subItem.path),
+                                      isActive(subItem.name),
                                     'menu-dropdown-badge-inactive':
-                                      !isActive(subItem.path)
+                                      !isActive(subItem.name)
                                   }"
                                 >
                                   new
@@ -266,9 +291,9 @@
                                   class="ms-auto menu-dropdown-badge-pro"
                                   [ngClass]="{
                                     'menu-dropdown-badge-pro-active':
-                                      isActive(subItem.path),
+                                      isActive(subItem.name),
                                     'menu-dropdown-badge-pro-inactive':
-                                      !isActive(subItem.path)
+                                      !isActive(subItem.name)
                                   }"
                                 >
                                   pro
@@ -281,34 +306,42 @@
                     </ul>
                   </div>
                 } @else {
+                  <!-- OPCIÓN INDIVIDUAL -->
                   @if (nav.path) {
                     <a
                       [routerLink]="nav.path"
-                      routerLinkActive="menu-item-active"
+                      (click)="selectMenuItem(nav.name)"
                       class="menu-item group"
                       [ngClass]="{
-                        'menu-item-inactive': !isActive(nav.path)
+                        'menu-item-active': isActive(nav.name),
+                        'menu-item-inactive': !isActive(nav.name),
+                        'xl:justify-center': !(
+                          (isExpanded$ | async) ||
+                          (isHovered$ | async)
+                        ),
+                        'xl:justify-start':
+                          (isExpanded$ | async) ||
+                          (isHovered$ | async)
                       }"
                     >
                       <span
                         class="menu-item-icon-size"
                         [ngClass]="{
-                          'menu-item-icon-active': isActive(nav.path),
-                          'menu-item-icon-inactive': !isActive(nav.path)
+                          'menu-item-icon-active': isActive(nav.name),
+                          'menu-item-icon-inactive': !isActive(nav.name)
                         }"
                         [innerHTML]="nav.icon | safeHtml"
-                      >
-                      </span>
+                      ></span>
 
-                      <span class="menu-item-text">
-                        @if (
-                          (isExpanded$ | async) ||
-                          (isHovered$ | async) ||
-                          (isMobileOpen$ | async)
-                        ) {
+                      @if (
+                        (isExpanded$ | async) ||
+                        (isHovered$ | async) ||
+                        (isMobileOpen$ | async)
+                      ) {
+                        <span class="menu-item-text">
                           {{ nav.name }}
-                        }
-                      </span>
+                        </span>
+                      }
                     </a>
                   }
                 }
@@ -317,12 +350,7 @@
           </ul>
         </div>
 
-        <!-- end main menu -->
-
-        <!-- Support Section -->
-        <!-- end support section -->
-
-        <!-- Others Section -->
+        <!-- SECCIÓN DE SUSCRIPCIÓN -->
         <div>
           <h2
             class="mb-4 text-xs uppercase flex leading-[20px] text-gray-400"
@@ -330,7 +358,8 @@
               'xl:justify-center': !(
                 (isExpanded$ | async) || (isHovered$ | async)
               ),
-              'justify-start': (isExpanded$ | async) || (isHovered$ | async)
+              'justify-start':
+                (isExpanded$ | async) || (isHovered$ | async)
             }"
           >
             @if (
@@ -338,7 +367,7 @@
               (isHovered$ | async) ||
               (isMobileOpen$ | async)
             ) {
-              SUSCRIPCiÓN
+              SUSCRIPCIÓN
             } @else {
               <svg
                 width="1em"
@@ -351,7 +380,7 @@
                 <path
                   fill-rule="evenodd"
                   clip-rule="evenodd"
-                  d="M5.99915 10.2451C6.96564 10.2451 7.74915 11.0286 7.74915 11.9951V12.0051C7.74915 12.9716 6.96564 13.7551 5.99915 13.7551C5.03265 13.7551 4.24915 12.9716 4.24915 12.0051V11.9951C4.24915 11.0286 5.03265 10.2451 5.99915 10.2451ZM17.9991 10.2451C18.9656 10.2451 19.7491 11.0286 19.7491 11.9951V12.0051C19.7491 12.9716 18.9656 13.7551 17.9991 13.7551C17.0326 13.7551 16.2491 12.9716 16.2491 12.0051V11.9951C16.2491 11.0286 17.0326 10.2451 17.9991 10.2451ZM13.7491 11.9951C13.7491 11.0286 12.9656 10.2451 11.9991 10.2451C11.0326 10.2451 10.2491 11.0286 10.2491 11.9951V12.0051C10.2491 12.9716 11.0326 13.7551 11.9991 13.7551C12.9656 13.7551 13.7491 13.7491 13.7491 12.0051V11.9951Z"
+                  d="M5.99915 10.2451C6.96564 10.2451 7.74915 11.0286 7.74915 11.9951V12.0051C7.74915 12.9716 6.96564 13.7551 5.99915 13.7551C5.03265 13.7551 4.24915 12.9716 4.24915 12.0051V11.9951C4.24915 11.0286 5.03265 10.2451 5.99915 10.2451ZM17.9991 10.2451C18.9656 10.2451 19.7491 11.0286 19.7491 11.9951V12.0051C19.7491 12.9716 18.9656 13.7551 17.9991 13.7551C17.0326 13.7551 16.2491 12.9716 16.2491 12.0051V11.9951C16.2491 11.0286 17.0326 10.2451 17.9991 10.2451ZM13.7491 11.9951C13.7491 11.0286 12.9656 10.2451 11.9991 10.2451C11.0326 10.2451 10.2491 11.0286 10.2491 11.9951V12.0051C10.2491 12.9716 11.0326 13.7551 11.9991 13.7551C12.9656 13.7551 13.7491 12.9716 13.7491 12.0051V11.9951Z"
                   fill="currentColor"
                 ></path>
               </svg>
@@ -359,10 +388,11 @@
           </h2>
 
           <ul class="flex flex-col gap-1">
-            @for (nav of othersItems; track $index; let i = $index) {
+            @for (nav of othersItems; track nav.name; let i = $index) {
               <li>
                 @if (nav.subItems) {
                   <button
+                    type="button"
                     (click)="toggleSubmenu('others', i)"
                     class="menu-item group cursor-pointer"
                     [ngClass]="{
@@ -388,8 +418,7 @@
                           openSubmenu !== 'others-' + i
                       }"
                       [innerHTML]="nav.icon | safeHtml"
-                    >
-                    </span>
+                    ></span>
 
                     @if (
                       (isExpanded$ | async) ||
@@ -399,34 +428,7 @@
                       <span class="menu-item-text">
                         {{ nav.name }}
                       </span>
-                    }
 
-                    @if (
-                      nav.new &&
-                      (
-                        (isExpanded$ | async) ||
-                        (isHovered$ | async) ||
-                        (isMobileOpen$ | async)
-                      )
-                    ) {
-                      <span
-                        class="ms-auto absolute end-10 menu-dropdown-badge"
-                        [ngClass]="{
-                          'menu-dropdown-badge-active':
-                            openSubmenu === 'others-' + i,
-                          'menu-dropdown-badge-inactive':
-                            openSubmenu !== 'others-' + i
-                        }"
-                      >
-                        new
-                      </span>
-                    }
-
-                    @if (
-                      (isExpanded$ | async) ||
-                      (isHovered$ | async) ||
-                      (isMobileOpen$ | async)
-                    ) {
                       <svg
                         [ngClass]="{
                           'rotate-180 text-brand-500':
@@ -437,7 +439,7 @@
                         viewBox="0 0 20 20"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
-                        class="ms-auto w-5 h-5 transition-transform duration-200"
+                        class="ms-auto h-5 w-5 transition-transform duration-200"
                       >
                         <path
                           d="M4.79175 7.396L10.0001 12.6043L15.2084 7.396"
@@ -468,51 +470,26 @@
                     }"
                   >
                     <ul class="mt-2 space-y-1 ms-9">
-                      @for (subItem of nav.subItems; track $index) {
+                      @for (
+                        subItem of nav.subItems;
+                        track subItem.name
+                      ) {
                         <li>
                           <a
                             [routerLink]="subItem.path"
-                            routerLinkActive=""
-                            (click)="onSubmenuClick()"
+                            (click)="
+                              selectMenuItem(subItem.name);
+                              onSubmenuClick()
+                            "
                             class="menu-dropdown-item"
                             [ngClass]="{
-                              'menu-dropdown-item-inactive':
-                                !isActive(subItem.path),
                               'menu-dropdown-item-active':
-                                isActive(subItem.path)
+                                isActive(subItem.name),
+                              'menu-dropdown-item-inactive':
+                                !isActive(subItem.name)
                             }"
                           >
                             {{ subItem.name }}
-
-                            <span class="flex items-center gap-1 ms-auto">
-                              @if (subItem.new) {
-                                <span
-                                  class="menu-dropdown-badge"
-                                  [ngClass]="{
-                                    'menu-dropdown-badge-active':
-                                      isActive(subItem.path),
-                                    'menu-dropdown-badge-inactive':
-                                      !isActive(subItem.path)
-                                  }"
-                                >
-                                  new
-                                </span>
-                              }
-
-                              @if (subItem.pro) {
-                                <span
-                                  class="ms-auto menu-dropdown-badge-pro"
-                                  [ngClass]="{
-                                    'menu-dropdown-badge-pro-active':
-                                      isActive(subItem.path),
-                                    'menu-dropdown-badge-pro-inactive':
-                                      !isActive(subItem.path)
-                                  }"
-                                >
-                                  pro
-                                </span>
-                              }
-                            </span>
                           </a>
                         </li>
                       }
@@ -522,31 +499,38 @@
                   @if (nav.path) {
                     <a
                       [routerLink]="nav.path"
-                      routerLinkActive="menu-item-active"
+                      (click)="selectMenuItem(nav.name)"
                       class="menu-item group"
                       [ngClass]="{
-                        'menu-item-inactive': !isActive(nav.path)
+                        'menu-item-active': isActive(nav.name),
+                        'menu-item-inactive': !isActive(nav.name),
+                        'xl:justify-center': !(
+                          (isExpanded$ | async) ||
+                          (isHovered$ | async)
+                        ),
+                        'xl:justify-start':
+                          (isExpanded$ | async) ||
+                          (isHovered$ | async)
                       }"
                     >
                       <span
                         class="menu-item-icon-size"
                         [ngClass]="{
-                          'menu-item-icon-active': isActive(nav.path),
-                          'menu-item-icon-inactive': !isActive(nav.path)
+                          'menu-item-icon-active': isActive(nav.name),
+                          'menu-item-icon-inactive': !isActive(nav.name)
                         }"
                         [innerHTML]="nav.icon | safeHtml"
-                      >
-                      </span>
+                      ></span>
 
-                      <span class="menu-item-text">
-                        @if (
-                          (isExpanded$ | async) ||
-                          (isHovered$ | async) ||
-                          (isMobileOpen$ | async)
-                        ) {
+                      @if (
+                        (isExpanded$ | async) ||
+                        (isHovered$ | async) ||
+                        (isMobileOpen$ | async)
+                      ) {
+                        <span class="menu-item-text">
                           {{ nav.name }}
-                        }
-                      </span>
+                        </span>
+                      }
                     </a>
                   }
                 }
@@ -555,10 +539,11 @@
           </ul>
         </div>
 
-        <!-- end other section -->
+        <!-- FIN DE SECCIONES -->
       </div>
     </nav>
 
+    <!-- WIDGET DE SUSCRIPCIÓN -->
     @if (
       (isExpanded$ | async) ||
       (isHovered$ | async) ||
