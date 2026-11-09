@@ -40,6 +40,10 @@ service cloud.firestore {
         && mappedRole(tenantId) == role;
     }
 
+    function isNormalCatalog(catalogId) {
+      return catalogId == 'normal';
+    }
+
     function canManage(tenantId) {
       return hasRole(tenantId, 'owner')
         || hasRole(tenantId, 'admin');
@@ -72,11 +76,16 @@ service cloud.firestore {
       }
 
       match /catalogs/{catalogId} {
-        allow read: if isActiveMember(tenantId);
-        allow create, update, delete: if canEdit(tenantId);
+        allow read: if isNormalCatalog(catalogId)
+          && isActiveMember(tenantId);
+        allow create, update, delete: if isNormalCatalog(catalogId)
+          && canEdit(tenantId);
+
         match /items/{itemId} {
-          allow read: if isActiveMember(tenantId);
-          allow create, update, delete: if canEdit(tenantId);
+          allow read: if isNormalCatalog(catalogId)
+            && isActiveMember(tenantId);
+          allow create, update, delete: if isNormalCatalog(catalogId)
+            && canEdit(tenantId);
         }
       }
 
@@ -86,13 +95,27 @@ service cloud.firestore {
       }
 
       match /categories/{categoryId} {
-        allow read: if isActiveMember(tenantId);
-        allow create, update, delete: if canEdit(tenantId);
+        allow read: if isActiveMember(tenantId)
+          && resource.data.catalogId == 'normal';
+        allow create: if canEdit(tenantId)
+          && request.resource.data.catalogId == 'normal';
+        allow update: if canEdit(tenantId)
+          && resource.data.catalogId == 'normal'
+          && request.resource.data.catalogId == 'normal';
+        allow delete: if canEdit(tenantId)
+          && resource.data.catalogId == 'normal';
       }
 
       match /deliveryZones/{zoneId} {
-        allow read: if isActiveMember(tenantId);
-        allow create, update, delete: if canEdit(tenantId);
+        allow read: if isActiveMember(tenantId)
+          && resource.data.catalogId == 'normal';
+        allow create: if canEdit(tenantId)
+          && request.resource.data.catalogId == 'normal';
+        allow update: if canEdit(tenantId)
+          && resource.data.catalogId == 'normal'
+          && request.resource.data.catalogId == 'normal';
+        allow delete: if canEdit(tenantId)
+          && resource.data.catalogId == 'normal';
       }
 
       match /settings/{settingId} {

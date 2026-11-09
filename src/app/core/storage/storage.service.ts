@@ -19,7 +19,7 @@ const ALLOWED_IMAGES: Record<string, string[]> = {
   'image/webp': ['webp'],
 };
 const MANAGED_IMAGE_PATH =
-  /^tenants\/[^/]+\/(normal|vip)\/products\/images\/[^/]+$/;
+  /^tenants\/[^/]+\/normal\/products\/images\/[^/]+$/;
 
 export function getProductImageValidationError(file: File): string | null {
   if (!ALLOWED_IMAGES[file.type]) {
@@ -61,6 +61,8 @@ export class StorageService {
     file: File,
     onProgress?: (progress: ProductImageUploadProgress) => void,
   ): Promise<UploadedProductImage> {
+    this.validateCatalogId(catalogId);
+
     const validationError = getProductImageValidationError(file);
     if (validationError) {
       throw new Error(validationError);
@@ -208,6 +210,12 @@ export class StorageService {
     }
 
     await deleteObject(ref(storage, fullPath));
+  }
+
+  private validateCatalogId(catalogId: string): asserts catalogId is CatalogId {
+    if (catalogId !== 'normal') {
+      throw new Error('El administrador solo permite operar sobre el catálogo.');
+    }
   }
 
   private getManagedImagePath(imageUrl: string): string | null {

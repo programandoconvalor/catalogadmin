@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
-import { of } from 'rxjs';
+import { provideRouter } from '@angular/router';
 
 import { CatalogService } from '../../core/catalog/catalog.service';
 import { CategoryService } from '../../core/catalog/category.service';
+import { DeliveryZoneService } from '../../core/catalog/delivery-zone.service';
 import type { CatalogItem } from '../../core/models/catalog-item.model';
 import type { Category } from '../../core/models/category.model';
 import { NotificationService } from '../../core/notifications/notification.service';
@@ -15,6 +15,7 @@ describe('CatalogPageComponent product form', () => {
   let component: CatalogPageComponent;
   let catalogService: jasmine.SpyObj<CatalogService>;
   let categoryService: jasmine.SpyObj<CategoryService>;
+  let deliveryZoneService: jasmine.SpyObj<DeliveryZoneService>;
   let storageService: jasmine.SpyObj<StorageService>;
   let notificationService: jasmine.SpyObj<NotificationService>;
 
@@ -81,6 +82,10 @@ describe('CatalogPageComponent product form', () => {
       'updateCategory',
       'deleteCategory',
     ]);
+    deliveryZoneService = jasmine.createSpyObj<DeliveryZoneService>(
+      'DeliveryZoneService',
+      ['getDeliveryZones'],
+    );
     storageService = jasmine.createSpyObj<StorageService>('StorageService', [
       'uploadProductImage',
       'deleteProductImage',
@@ -92,6 +97,7 @@ describe('CatalogPageComponent product form', () => {
     );
     catalogService.getItems.and.resolveTo([]);
     categoryService.getCategories.and.resolveTo([]);
+    deliveryZoneService.getDeliveryZones.and.resolveTo([]);
     catalogService.getItem.and.resolveTo(existingItem);
     catalogService.createItem.and.resolveTo('new-product');
     catalogService.updateItem.and.resolveTo();
@@ -103,9 +109,10 @@ describe('CatalogPageComponent product form', () => {
     await TestBed.configureTestingModule({
       imports: [CatalogPageComponent],
       providers: [
-        { provide: ActivatedRoute, useValue: { data: of({ catalogId: 'normal' }) } },
+        provideRouter([]),
         { provide: CatalogService, useValue: catalogService },
         { provide: CategoryService, useValue: categoryService },
+        { provide: DeliveryZoneService, useValue: deliveryZoneService },
         { provide: StorageService, useValue: storageService },
         { provide: NotificationService, useValue: notificationService },
       ],
@@ -137,25 +144,19 @@ describe('CatalogPageComponent product form', () => {
     expect(component.itemForm.controls.isAvailable.value).toBeFalse();
     expect(component.productSizes.at(0).controls.id.value).toBe('std');
     expect(component.includes.at(0).value).toBe('Moño');
-    expect(component.deliveryZones.at(0).value).toBe('Metepec');
   });
 
-  it('adds and removes sizes, includes and delivery zones', () => {
+  it('adds and removes sizes and included items', () => {
     component.openCreateItem();
     component.addProductSize();
     component.addProductSize();
     component.addInclude();
     component.addInclude();
-    component.addDeliveryZone();
-    component.addDeliveryZone();
-
     component.removeProductSize(0);
     component.removeInclude(0);
-    component.removeDeliveryZone(0);
 
     expect(component.productSizes.length).toBe(1);
     expect(component.includes.length).toBe(1);
-    expect(component.deliveryZones.length).toBe(1);
   });
 
   it('rejects missing required values and negative prices', async () => {
@@ -209,13 +210,6 @@ describe('CatalogPageComponent product form', () => {
     component.addInclude();
     component.includes.at(0).setValue('Tarjeta');
     component.addInclude();
-    component.addDeliveryZone();
-    component.deliveryZones.at(0).setValue('Metepec');
-    component.addDeliveryZone();
-    component.deliveryZones.at(1).setValue(' metEpec ');
-    component.addDeliveryZone();
-    component.deliveryZones.at(2).setValue(' ');
-
     await component.saveItem();
 
     const savedItem = catalogService.createItem.calls.mostRecent().args[1];
@@ -224,7 +218,7 @@ describe('CatalogPageComponent product form', () => {
     expect(savedItem.commercialData?.basePriceMxn).toBe(120.5);
     expect(savedItem.commercialData?.productSizes?.[0].priceMxn).toBe(240.5);
     expect(savedItem.commercialData?.includes).toEqual(['Tarjeta']);
-    expect(savedItem.commercialData?.deliveryZones).toEqual(['Metepec']);
+    expect(savedItem.commercialData?.deliveryZones).toEqual([]);
     expect(typeof savedItem.price).toBe('number');
     expect(typeof savedItem.sortOrder).toBe('number');
   });
@@ -243,7 +237,7 @@ describe('CatalogPageComponent product form', () => {
     expect(storageService.uploadProductImage).not.toHaveBeenCalled();
     expect(catalogService.createItem).toHaveBeenCalled();
     expect(catalogService.createItem.calls.mostRecent().args[1].imageUrl)
-      .toBeUndefined();
+      .toBe('');
     expect(component.savingItem).toBeFalse();
     expect(component.uploadingImage).toBeFalse();
     expect(component.successMessage).toBe('Producto creado correctamente.');
@@ -255,7 +249,7 @@ describe('CatalogPageComponent product form', () => {
     await component.loadData();
 
     const renderedText = fixture.nativeElement.textContent as string;
-    expect(renderedText).toContain(existingItem.code);
+    expect(renderedText).toContain(existingItem.name);
     expect(renderedText).not.toContain('Cargando productos y categorías');
   });
 
@@ -268,9 +262,9 @@ describe('CatalogPageComponent product form', () => {
       name: 'Producto con imagen',
       description: 'Imagen guardada antes del documento.',
     });
-    component.selectedImage = new File(['test image'], 'flower.png', {
+    component.selectedImages = [new File(['test image'], 'flower.png', {
       type: 'image/png',
-    });
+    })];
     storageService.uploadProductImage.and.callFake(
       async (_catalogId, _code, _file, onProgress) => {
         callOrder.push('storage');
@@ -281,7 +275,7 @@ describe('CatalogPageComponent product form', () => {
         });
         return {
           downloadUrl: 'https://example.test/flower.png',
-          fullPath: 'tenants/test/catalogs/normal/products/images/flower.png',
+          fullPath: 'tenants/test/normal/products/images/flower.png',
         };
       },
     );
@@ -312,9 +306,9 @@ describe('CatalogPageComponent product form', () => {
       name: 'Producto con error',
       description: 'La carga va a fallar.',
     });
-    component.selectedImage = new File(['test image'], 'flower.png', {
+    component.selectedImages = [new File(['test image'], 'flower.png', {
       type: 'image/png',
-    });
+    })];
     storageService.uploadProductImage.and.rejectWith(
       Object.assign(new Error('User does not have permission'), {
         code: 'storage/unauthorized',
@@ -343,12 +337,12 @@ describe('CatalogPageComponent product form', () => {
       name: 'Producto con error',
       description: 'La escritura va a fallar.',
     });
-    component.selectedImage = new File(['test image'], 'flower.png', {
+    component.selectedImages = [new File(['test image'], 'flower.png', {
       type: 'image/png',
-    });
+    })];
     storageService.uploadProductImage.and.resolveTo({
       downloadUrl: 'https://example.test/new-image.png',
-      fullPath: 'tenants/test/catalogs/normal/products/images/new-image.png',
+      fullPath: 'tenants/test/normal/products/images/new-image.png',
     });
     storageService.deleteProductImageByPath.and.resolveTo();
     catalogService.createItem.and.rejectWith(
@@ -360,7 +354,7 @@ describe('CatalogPageComponent product form', () => {
     await component.saveItem();
 
     expect(storageService.deleteProductImageByPath).toHaveBeenCalledWith(
-      'tenants/test/catalogs/normal/products/images/new-image.png',
+      'tenants/test/normal/products/images/new-image.png',
     );
     expect(component.errorMessage).toContain('[permission-denied]');
     expect(component.savingItem).toBeFalse();

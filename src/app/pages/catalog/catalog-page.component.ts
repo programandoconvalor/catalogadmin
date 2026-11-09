@@ -16,9 +16,6 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-
 import { CatalogService } from '../../core/catalog/catalog.service';
 import { CategoryService } from '../../core/catalog/category.service';
 import { DeliveryZoneService } from '../../core/catalog/delivery-zone.service';
@@ -71,7 +68,6 @@ type ProductSizeFormGroup = FormGroup<ProductSizeControls>;
   styleUrl: './catalog-page.component.scss',
 })
 export class CatalogPageComponent implements OnInit {
-  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly ngZone = inject(NgZone);
@@ -158,8 +154,8 @@ export class CatalogPageComponent implements OnInit {
     sortOrder: [0, [Validators.required, Validators.min(0)]],
   });
 
-  catalogId: CatalogId = 'normal';
-  pageTitle = 'Catálogo Normal';
+  readonly catalogId: CatalogId = 'normal';
+  pageTitle = 'Catálogo';
   items: CatalogItem[] = [];
   categories: Category[] = [];
   deliveryZones: DeliveryZone[] = [];
@@ -217,23 +213,7 @@ export class CatalogPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.data
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((data) => {
-        const catalogId = data['catalogId'];
-
-        if (catalogId !== 'normal' && catalogId !== 'vip') {
-          this.errorMessage = 'La ruta no especifica un catálogo válido.';
-          this.loading = false;
-          return;
-        }
-
-        this.catalogId = catalogId;
-        this.pageTitle =
-          catalogId === 'vip' ? 'Catálogo VIP' : 'Catálogo Normal';
-
-        void this.loadData();
-      });
+    void this.loadData();
   }
 
   get filteredItems(): CatalogItem[] {
@@ -1296,7 +1276,6 @@ export class CatalogPageComponent implements OnInit {
 
   /** Genera un código automático para el producto. Se conserva al editarlo. */
   private generateProductCode(): string {
-    const catalogPrefix = this.catalogId === 'vip' ? 'CDF-VIP' : 'CDF-NOR';
     const now = new Date();
     const date = [
       now.getFullYear(),
@@ -1308,7 +1287,7 @@ export class CatalogPageComponent implements OnInit {
         ? crypto.randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase()
         : Math.random().toString(36).slice(2, 8).toUpperCase();
 
-    return `${catalogPrefix}-${date}-${randomPart}`;
+    return `CDF-${date}-${randomPart}`;
   }
 
   private nextCommercialId(): number {

@@ -160,157 +160,30 @@
 
 
 
-    <div class="grid gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-800 sm:px-6 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.6fr)\_repeat(3,minmax(150px,1fr))\_auto]">
-
-      <div class="catalog-search-field relative w-full">
-
-        <svg
-
-          class="catalog-search-icon pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-
-          viewBox="0 0 24 24"
-
-          fill="none"
-
-          stroke="currentColor"
-
-          stroke-width="1.8"
-
-          stroke-linecap="round"
-
-          stroke-linejoin="round"
-
-          aria-hidden="true"
-
-        >
-
-          <circle cx="11" cy="11" r="7" />
-
-          <path d="m20 20-4-4" />
-
-        </svg>
-
-        <input
-
-          id="catalog-search"
-
-          type="search"
-
-          aria-label="Buscar productos por código, nombre o descripción"
-
-          [value]="searchTerm"
-
-          (input)="onSearchChange($event)"
-
-          placeholder="Buscar por código, nombre o descripción..."
-
-          class="h-11 w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-400 focus:outline-hidden focus:ring-3 focus:ring-pink-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-
-        />
-
+    <div class="catalog-toolbar" role="search" aria-label="Filtros de productos">
+      <div class="catalog-toolbar-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+        <input id="catalog-search" type="search" aria-label="Buscar productos por código, nombre o descripción" [value]="searchTerm" (input)="onSearchChange($event)" placeholder="Buscar producto..." />
       </div>
-
-      <select
-
-        aria-label="Filtrar por categoría"
-
-        [value]="categoryFilter"
-
-        (change)="onCategoryFilterChange($event)"
-
-        class="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-theme-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-
-      >
-
+      <select aria-label="Filtrar por categoría" [value]="categoryFilter" (change)="onCategoryFilterChange($event)" class="catalog-toolbar-select">
         <option value="">Todas las categorías</option>
-
-        @for (category of categories; track category.id) {
-
-          <option [value]="category.id">{{ category.name }}</option>
-
-        }
-
+        @for (category of categories; track category.id) { <option [value]="category.id">{{ category.name }}</option> }
       </select>
-
-      <select
-
-        aria-label="Filtrar por estado"
-
-        [value]="statusFilter"
-
-        (change)="onStatusFilterChange($event)"
-
-        class="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-theme-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-
-      >
-
-        <option value="">Todos los estados</option>
-
-        <option value="active">Activo</option>
-
-        <option value="inactive">Inactivo</option>
-
+      <select aria-label="Filtrar por estado" [value]="statusFilter" (change)="onStatusFilterChange($event)" class="catalog-toolbar-select">
+        <option value="">Todos los estados</option><option value="active">Activo</option><option value="inactive">Agotado</option>
       </select>
-
-      <select
-
-        aria-label="Ordenar productos"
-
-        [value]="sortBy"
-
-        (change)="onSortChange($event)"
-
-        class="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-theme-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-
-      >
-
-        <option value="order">Ordenar por orden</option>
-
-        <option value="name">Ordenar por nombre</option>
-
-        <option value="code">Ordenar por código</option>
-
-        <option value="price">Ordenar por precio</option>
-
-      </select>
-
-      <button
-
-        type="button"
-
-        class="inline-flex h-11 items-center justify-center rounded-lg border border-gray-200 px-3 text-theme-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-
-        [attr.aria-label]="sortDirection === 'asc' ? 'Orden ascendente' : 'Orden descendente'"
-
-        [attr.title]="sortDirection === 'asc' ? 'Orden ascendente' : 'Orden descendente'"
-
-        (click)="toggleSortDirection()"
-
-      >
-
-        <svg
-
-          class="h-4 w-4 transition-transform"
-
-          [class.rotate-180]="sortDirection === 'desc'"
-
-          viewBox="0 0 20 20"
-
-          fill="none"
-
-          aria-hidden="true"
-
-        >
-
-          <path d="M10 4v12m0 0 5-5m-5 5-5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-
-        </svg>
-
-      </button>
-
+      <div class="catalog-sort-control">
+        <select aria-label="Ordenar productos" [value]="sortBy" (change)="onSortChange($event)" class="catalog-toolbar-select">
+          <option value="order">Más recientes</option><option value="name">Nombre</option><option value="code">Código</option><option value="price">Precio</option>
+        </select>
+        <button type="button" class="catalog-sort-direction" [attr.aria-label]="sortDirection === 'asc' ? 'Orden ascendente' : 'Orden descendente'" (click)="toggleSortDirection()"><svg viewBox="0 0 20 20" aria-hidden="true" [class.rotate-180]="sortDirection === 'desc'"><path d="M10 4v12m0 0 5-5m-5 5-5-5"></path></svg></button>
+      </div>
+      <span class="catalog-price-symbol" aria-hidden="true">$</span>
+      <label class="catalog-price-field"><span>Precio</span><input type="number" min="0" inputmode="decimal" placeholder="Mín." aria-label="Precio mínimo" [value]="minPriceFilter" (input)="onMinPriceChange($event)" /></label>
+      <label class="catalog-price-field catalog-price-field-max"><span class="catalog-price-label-spacer" aria-hidden="true">Precio</span><input type="number" min="0" inputmode="decimal" placeholder="Máx." aria-label="Precio máximo" [value]="maxPriceFilter" (input)="onMaxPriceChange($event)" /></label>
+      <button type="button" class="catalog-filter-button" (click)="applyFilters()"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14l-5.5 6.2v4.3l-3 1.5v-5.8L3 4Z"></path></svg>Filtrar</button>
+      <button type="button" class="catalog-clear-button" (click)="clearFilters()"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 7a6.5 6.5 0 1 0 1 4M16 3v4h-4"></path></svg>Limpiar</button>
     </div>
-
-
 
     @if (loading) {
 
@@ -326,11 +199,11 @@
 
         <p class="font-medium text-gray-800 dark:text-white/90">
 
-          {{ searchTerm || categoryFilter || statusFilter ? 'No se encontraron productos.' : 'Aún no hay productos en este catálogo.' }}
+          {{ searchTerm || categoryFilter || statusFilter || minPriceFilter || maxPriceFilter ? 'No se encontraron productos.' : 'Aún no hay productos en este catálogo.' }}
 
         </p>
 
-        @if (!searchTerm && !categoryFilter && !statusFilter) {
+        @if (!searchTerm && !categoryFilter && !statusFilter && !minPriceFilter && !maxPriceFilter) {
 
           <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
 
@@ -352,7 +225,7 @@
 
             <article class="flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs transition hover:-translate-y-0.5 hover:shadow-theme-md dark:border-gray-700 dark:bg-gray-900">
 
-              <div class="relative h-40 bg-gray-100 dark:bg-gray-800">
+              <div class="catalog-product-image relative h-40 bg-gray-100 dark:bg-gray-800">
 
                 @if (item.imageUrl) {
 
@@ -388,7 +261,7 @@
 
                   <span class="h-1.5 w-1.5 rounded-full" [ngClass]="item.status === 'active' ? 'bg-success-500' : 'bg-gray-400'"></span>
 
-                  {{ item.status === 'active' ? 'Activo' : 'Inactivo' }}
+                  {{ item.status === 'active' ? 'Activo' : 'Agotado' }}
 
                 </span>
 
@@ -574,7 +447,7 @@
 
                       <span class="h-1.5 w-1.5 rounded-full" [ngClass]="item.status === 'active' ? 'bg-success-500' : 'bg-gray-400'"></span>
 
-                      {{ item.status === 'active' ? 'Activo' : 'Inactivo' }}
+                      {{ item.status === 'active' ? 'Activo' : 'Agotado' }}
 
                     </span>
 

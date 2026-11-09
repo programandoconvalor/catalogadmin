@@ -6,7 +6,7 @@
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90">
     Editar perfil del catálogo 
   </h2>
-        <p>Esta información se compartirá en los catálogos Normal y VIP.</p>
+        <p>Esta información se mostrará en el catálogo de tu florería.</p>
       </div>
     </div>
   </header>
@@ -35,7 +35,7 @@
               <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">Logo y nombre</h2>
               
               
-              <p>La identidad que verán tus clientes en ambos catálogos.</p></div></header>
+              <p>La identidad que verán tus clientes en el catálogo.</p></div></header>
             <div class="branding-upload">
               <div class="logo-preview">
   @if (logoPreviewUrl) {
@@ -86,24 +86,14 @@
           <header class="panel-heading"><div><h2>Información de contacto</h2><p>Estos datos aparecerán en la sección “Contáctanos” del catálogo.</p></div></header>
           <div class="contact-form-grid contact-form-grid-single">
             <label class="field field-full phone-catalog-field">
-              <span>Teléfono principal para catálogo Normal <b>*</b></span>
+              <span>Teléfono principal del catálogo <b>*</b></span>
               <div class="phone-input-group">
-                <select [(ngModel)]="primaryPhoneNormalCountryCode" name="primaryPhoneNormalCountryCode" aria-label="País del teléfono principal del catálogo Normal" (ngModelChange)="onPrimaryPhoneCountryChange($event)">
+                <select [(ngModel)]="primaryPhoneNormalCountryCode" name="primaryPhoneNormalCountryCode" aria-label="País del teléfono principal del catálogo" (ngModelChange)="onPrimaryPhoneCountryChange($event)">
                   @for (country of phoneCountries; track country.code) { <option [value]="country.code">{{ country.flag }} {{ country.code }} {{ country.dialCode }}</option> }
                 </select>
                 <input [(ngModel)]="profile.primaryPhoneNormal" name="primaryPhoneNormal" type="tel" placeholder="722 123 4567" autocomplete="tel-national" required />
               </div>
-              <small class="field-hint">Este número aparecerá únicamente en el catálogo Normal.</small>
-            </label>
-            <label class="field field-full phone-catalog-field">
-              <span>Teléfono principal para catálogo VIP <b>*</b></span>
-              <div class="phone-input-group">
-                <select [(ngModel)]="primaryPhoneVipCountryCode" name="primaryPhoneVipCountryCode" aria-label="País del teléfono principal del catálogo VIP" (ngModelChange)="onVipPhoneCountryChange($event)">
-                  @for (country of phoneCountries; track country.code) { <option [value]="country.code">{{ country.flag }} {{ country.code }} {{ country.dialCode }}</option> }
-                </select>
-                <input [(ngModel)]="profile.primaryPhoneVip" name="primaryPhoneVip" type="tel" placeholder="722 123 4567" autocomplete="tel-national" required />
-              </div>
-              <small class="field-hint">Este número aparecerá únicamente en el catálogo VIP.</small>
+              <small class="field-hint">Este número aparecerá en el catálogo.</small>
             </label>
             <label class="field field-full"><span>Correo electrónico </span><input [(ngModel)]="profile.email" name="profileEmail" type="email" placeholder="pedidos@tufloreria.com" autocomplete="email" /></label>
             <label class="field field-full"><span>Página web </span><div class="input-icon-wrap"><span>◎</span><input [(ngModel)]="profile.website" name="profileWebsite" type="url" placeholder="https://tufloreria.com" autocomplete="url" /></div></label>
@@ -111,7 +101,7 @@
           <div class="contact-actions">
             <button type="button" class="catalog-primary-action" (click)="saveProfile('contact')" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar teléfonos y contacto' }}</button>
           </div>
-          <p class="field-hint section-footnote">Los dos teléfonos son obligatorios. El correo electrónico, la página web y las redes sociales son opcionales.</p>
+          <p class="field-hint section-footnote">El teléfono principal es obligatorio. El correo electrónico, la página web y las redes sociales son opcionales.</p>
         </section>
       }
 
@@ -132,7 +122,7 @@
           <p class="field-hint">Puedes agregar hasta 5 redes sociales. Usa la URL completa del perfil o enlace de WhatsApp.</p>
         
         
-        <div class="bottom-actions"><span>Los cambios se compartirán en los catálogos Normal y VIP.</span><button class="catalog-primary-action" type="button" (click)="saveProfile(activeTab)" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar redes socialess' }}</button></div>
+        <div class="bottom-actions"><span>Los cambios se mostrarán en el catálogo.</span><button class="catalog-primary-action" type="button" (click)="saveProfile(activeTab)" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar redes sociales' }}</button></div>
     
         </section>
         
@@ -157,9 +147,9 @@
 
       @if (activeTab === 'appearance') {
         <section class="panel">
-          <header class="panel-heading"><div><h2>Apariencia en catálogos</h2><p>Personaliza elementos visuales compartidos por Normal y VIP.</p></div></header>
+          <header class="panel-heading"><div><h2>Apariencia del catálogo</h2><p>Personaliza los elementos visuales del catálogo.</p></div></header>
           <label class="field color-field"><span>Color principal</span><div class="color-control"><input type="color" [(ngModel)]="profile.primaryColor" name="primaryColor" /><input [(ngModel)]="profile.primaryColor" name="primaryColorText" maxlength="7" /></div><small class="field-hint">Se usa en botones, iconos y detalles del catálogo.</small></label>
-          <div class="subsection-heading payment-heading"><div><h3>Métodos de pago</h3><p>Selecciona las formas de pago que aceptas. Se mostrarán en los catálogos Normal y VIP.</p></div></div>
+          <div class="subsection-heading payment-heading"><div><h3>Métodos de pago</h3><p>Selecciona las formas de pago que aceptas. Se mostrarán en el catálogo.</p></div></div>
           <div class="payment-options payment-options-grid">
             <label class="payment-option"><input type="checkbox" [checked]="paymentChecked('cash')" (change)="togglePayment('cash', $any($event.target).checked)" /><span class="payment-method-logo payment-cash">$</span><span class="payment-method-copy"><strong>Efectivo</strong><small>Pago en persona</small></span></label>
             <label class="payment-option"><input type="checkbox" [checked]="paymentChecked('deposit')" (change)="togglePayment('deposit', $any($event.target).checked)" /><span class="payment-method-logo payment-bank">▤</span><span class="payment-method-copy"><strong>Depósitos</strong><small>Depósito bancario</small></span></label>
@@ -180,7 +170,7 @@
     </main>
 
     <aside class="preview-aside">
-      <div class="aside-heading"><span class="panel-icon">◉</span><div><h2>Vista previa</h2><p>Así se verá tu florería en los catálogos.</p></div></div>
+      <div class="aside-heading"><span class="panel-icon">◉</span><div><h2>Vista previa</h2><p>Así se verá tu florería en el catálogo.</p></div></div>
       <div class="mini-catalog">
         <div class="mini-catalog-status"><span class="active-pill"><i></i> Catálogo activo</span></div>
         <div class="mini-catalog-body">
@@ -204,8 +194,7 @@
           @if (profile.tagline) { <p class="mini-tagline">{{ profile.tagline }}</p> }
           @if (profile.description) { <p class="mini-description">{{ profile.description }}</p> }
           <div class="preview-contact">
-            @if (profile.primaryPhoneNormal) { <p><strong>Teléfono principal para catálogo normal</strong>&nbsp;{{ phoneCountry(primaryPhoneNormalCountryCode).dialCode }} {{ profile.primaryPhoneNormal }}</p> }
-            @if (profile.primaryPhoneVip) { <p><strong>Teléfono principal para catálogo VIP</strong>&nbsp;{{ phoneCountry(primaryPhoneVipCountryCode).dialCode }} {{ profile.primaryPhoneVip }}</p> }
+            @if (profile.primaryPhoneNormal) { <p><strong>Teléfono principal</strong>&nbsp;{{ phoneCountry(primaryPhoneNormalCountryCode).dialCode }} {{ profile.primaryPhoneNormal }}</p> }
             @if (profile.email) { <p><span>✉</span>{{ profile.email }}</p> }
             @if (profile.website) { <p><span>◎</span>{{ profile.website }}</p> }
           </div>
@@ -217,7 +206,7 @@
           <div class="mini-payment"><span>▤</span><div><strong>Métodos de pago</strong><p>{{ paymentLabels() }}</p></div></div>
         </div>
       </div>
-      <div class="shared-note"><span>✓</span><p><strong>Una sola configuración</strong><br />Estos datos se guardan una vez y están destinados a los catálogos Normal y VIP.</p></div>
+      <div class="shared-note"><span>✓</span><p><strong>Una sola configuración</strong><br />Estos datos se guardan una vez y se muestran en el catálogo.</p></div>
     </aside>
   </div>
 </div>

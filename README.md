@@ -2,7 +2,7 @@
 
 Panel de administración para gestionar los catálogos digitales de **Admin Catálogo**. La aplicación permite administrar productos, categorías, imágenes y zonas de entrega desde una interfaz web desarrollada con Angular, Tailwind CSS y Firebase.
 
-El proyecto está diseñado para mantener separados los catálogos Normal y VIP, facilitando la administración de sus productos, categorías y zonas de entrega.
+El administrador gestiona un único catálogo por florería. Para mantener compatibilidad con los datos existentes, el catálogo se identifica internamente como `normal`; esa etiqueta no se muestra en la interfaz.
 
 ## Características principales
 
@@ -24,19 +24,17 @@ El proyecto está diseñado para mantener separados los catálogos Normal y VIP,
 
 - Crear, editar y eliminar categorías.
 - Configurar el nombre, estado y orden de aparición.
-- Mantener las categorías separadas por catálogo.
-- Administrar las categorías desde el panel correspondiente a cada catálogo.
+- Administrar las categorías del catálogo de la florería.
 
 ### Gestión de zonas de entrega
 
 - Crear, consultar, editar y eliminar zonas de entrega.
 - Configurar nombre, estado y orden de aparición.
-- Mantener independientes las zonas de los catálogos Normal y VIP.
-- Identificar cada zona mediante `catalogId`.
+- Conservar el campo `catalogId: 'normal'` para compatibilidad con los datos existentes.
 - Validar la pertenencia de una zona al catálogo antes de actualizarla o eliminarla.
 - Administrar las zonas sin un campo de descripción.
 
-**Importante:** las zonas de entrega de Catálogo Normal y Catálogo VIP son independientes. Los cambios realizados en un catálogo no deben modificar las zonas del otro.
+Los cambios del administrador se limitan a las zonas con `catalogId: 'normal'`.
 
 ### Administración de imágenes
 
@@ -72,7 +70,7 @@ El proyecto está diseñado para mantener separados los catálogos Normal y VIP,
 
 ## Arquitectura de datos
 
-La aplicación utiliza una estructura organizada por tenant y catálogo.
+La aplicación utiliza una estructura organizada por tenant. El administrador opera sobre un único catálogo y conserva el identificador histórico `normal` para no cambiar las rutas ni los documentos existentes.
 
 La estructura de Firestore contempla las siguientes rutas:
 
@@ -83,19 +81,17 @@ tenants/
     ├── catalogs/
     │   ├── normal/
     │   │   └── items/
-    │   └── vip/
-    │       └── items/
+    │   └── vip/ (estructura existente; no administrada ni modificada por este panel)
     └── deliveryZones/
 ```
 
-Las categorías se identifican mediante `catalogId` para separar Normal y VIP. Las zonas de entrega también utilizan `catalogId` para distinguir a qué catálogo pertenece cada registro.
+Las categorías y las zonas de entrega conservan `catalogId: 'normal'` para mantener compatibilidad con Firestore. El panel no administra el catálogo VIP ni altera sus documentos.
 
 La colección de zonas puede ser compartida a nivel de tenant, pero las consultas y operaciones deben respetar el catálogo correspondiente.
 
-## Catálogos
+## Catálogo público
 
-- **Catálogo Normal:** [https://cielitodeflores.vercel.app/](https://cielitodeflores.vercel.app/)
-- **Catálogo VIP:** [https://cielitodefloresvip.vercel.app/](https://cielitodefloresvip.vercel.app/)
+- [Catálogo de Cielito de Flores](https://cielitodeflores.vercel.app/)
 
 ## Requisitos previos
 
@@ -235,7 +231,7 @@ Antes de publicar:
 - Verifica las reglas de Firestore y Storage.
 - Comprueba el funcionamiento del inicio de sesión.
 - Prueba las operaciones CRUD de productos y categorías.
-- Verifica que Normal y VIP mantengan sus zonas de entrega independientes.
+- Verifica que las operaciones de catálogo se limiten a `catalogId: 'normal'`.
 - Ejecuta una compilación de producción y revisa posibles errores.
 
 ## Proyecto base y atribución

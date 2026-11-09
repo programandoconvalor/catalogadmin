@@ -79,7 +79,6 @@ export class ProfileComponent implements OnInit {
   ];
   primaryPhoneCountryCode = 'MX';
   primaryPhoneNormalCountryCode = 'MX';
-  primaryPhoneVipCountryCode = 'MX';
   private persistedProfile: StoreProfile = this.createEmptyProfile();
 
   async ngOnInit(): Promise<void> {
@@ -157,7 +156,6 @@ export class ProfileComponent implements OnInit {
         description: data.description,
         logoUrlExists: Boolean(data.logoUrl),
         primaryPhoneNormal: data.primaryPhoneNormal,
-        primaryPhoneVip: data.primaryPhoneVip,
         email: data.email,
         website: data.website,
         address: data.address,
@@ -198,11 +196,6 @@ export class ProfileComponent implements OnInit {
           data.primaryPhoneCountryCode ??
           'MX',
 
-        primaryPhoneVip: data.primaryPhoneVip ?? '',
-
-        primaryPhoneVipCountryCode:
-          data.primaryPhoneVipCountryCode ?? 'MX',
-
         phones: Array.isArray(data.phones)
           ? data.phones
               .slice(0, this.maxAdditionalPhones)
@@ -241,9 +234,6 @@ export class ProfileComponent implements OnInit {
       this.profile.primaryPhoneNormalCountryCode ||
       this.profile.primaryPhoneCountryCode ||
       'MX';
-
-    this.primaryPhoneVipCountryCode =
-      this.profile.primaryPhoneVipCountryCode || 'MX';
 
     this.primaryPhoneCountryCode =
       this.primaryPhoneNormalCountryCode;
@@ -286,7 +276,7 @@ export class ProfileComponent implements OnInit {
       const sectionKeys: Record<string, (keyof StoreProfile)[]> = {
         general: ['name', 'tagline', 'description', 'logoUrl'],
         redes: [ 'socials'],
-        contact: ['primaryPhone', 'primaryPhoneCountryCode', 'primaryPhoneNormal', 'primaryPhoneNormalCountryCode', 'primaryPhoneVip', 'primaryPhoneVipCountryCode', 'email', 'website', 'socials'],
+        contact: ['primaryPhone', 'primaryPhoneCountryCode', 'primaryPhoneNormal', 'primaryPhoneNormalCountryCode', 'email', 'website', 'socials'],
         address: ['address'],
         appearance: ['primaryColor', 'payments'],
         preview: [],
@@ -316,20 +306,17 @@ export class ProfileComponent implements OnInit {
 
       if (section === 'contact') {
         this.profile.primaryPhoneNormal = (this.profile.primaryPhoneNormal || '').trim();
-        this.profile.primaryPhoneVip = (this.profile.primaryPhoneVip || '').trim();
         this.profile.email = (this.profile.email || '').trim();
         this.profile.website = (this.profile.website || '').trim();
         this.profile.socials = this.profile.socials
           .map((social) => ({ ...social, url: social.url.trim() }))
           .filter((social) => social.url)
           .slice(0, this.maxSocialNetworks);
-        if (!this.profile.primaryPhoneNormal) throw new Error('El teléfono principal para Catálogo Normal es obligatorio.');
-        if (!this.profile.primaryPhoneVip) throw new Error('El teléfono principal para Catálogo VIP es obligatorio.');
-        // Mantener los campos antiguos sincronizados con Normal para compatibilidad.
+        if (!this.profile.primaryPhoneNormal) throw new Error('El teléfono principal del catálogo es obligatorio.');
+        // Mantener los campos históricos sincronizados con el catálogo actual.
         this.profile.primaryPhone = this.profile.primaryPhoneNormal;
         this.profile.primaryPhoneCountryCode = this.primaryPhoneNormalCountryCode;
         this.profile.primaryPhoneNormalCountryCode = this.primaryPhoneNormalCountryCode;
-        this.profile.primaryPhoneVipCountryCode = this.primaryPhoneVipCountryCode;
       }
 
 
@@ -352,7 +339,6 @@ export class ProfileComponent implements OnInit {
         sectionData.primaryPhone = this.profile.primaryPhoneNormal;
         sectionData.primaryPhoneCountryCode = this.primaryPhoneNormalCountryCode;
         sectionData.primaryPhoneNormalCountryCode = this.primaryPhoneNormalCountryCode;
-        sectionData.primaryPhoneVipCountryCode = this.primaryPhoneVipCountryCode;
       }
 
       await setDoc(
@@ -399,10 +385,6 @@ export class ProfileComponent implements OnInit {
   onPrimaryPhoneCountryChange(code: string): void {
     this.primaryPhoneNormalCountryCode = code;
     this.primaryPhoneCountryCode = code;
-  }
-
-  onVipPhoneCountryChange(code: string): void {
-    this.primaryPhoneVipCountryCode = code;
   }
 
   onLogoSelected(event: Event): void {

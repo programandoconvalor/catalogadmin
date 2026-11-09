@@ -1,3 +1,4 @@
+
 import { Routes } from '@angular/router';
 
 import { EcommerceComponent } from './pages/dashboard/ecommerce/ecommerce.component';
@@ -23,6 +24,9 @@ import { CalenderComponent } from './pages/calender/calender.component';
 import { CatalogPageComponent } from './pages/catalog/catalog-page.component';
 import { ProductsComponent } from './pages/products/products.component';
 
+// NUEVO: Categorías
+import { CategoriesComponent } from './pages/categories/categories.component';
+
 import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
 
@@ -39,26 +43,19 @@ export const routes: Routes = [
       // CATALOGS
       // =====================================================
       {
-        path: 'catalogs',
-        children: [
-          {
-            path: 'products',
-            component: ProductsComponent,
-            title: 'Productos',
-          },
-          {
-            path: 'normal',
-            component: CatalogPageComponent,
-            data: { catalogId: 'normal' },
-            title: 'Catálogo Normal',
-          },
-          {
-            path: 'vip',
-            component: CatalogPageComponent,
-            data: { catalogId: 'vip' },
-            title: 'Catálogo VIP',
-          },
-        ],
+        path: 'catalog',
+        component: CatalogPageComponent,
+        title: 'Catálogo',
+      },
+      {
+        path: 'catalog/products',
+        component: ProductsComponent,
+        title: 'Productos',
+      },
+      {
+        path: 'catalog/categories',
+        component: CategoriesComponent,
+        title: 'Categorías',
       },
 
       // =====================================================
@@ -70,7 +67,6 @@ export const routes: Routes = [
         pathMatch: 'full',
         title: 'Administración de Catálogos para Florerías',
       },
-
       {
         path: 'calendar',
         component: CalenderComponent,

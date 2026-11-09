@@ -164,7 +164,7 @@ export type CatalogProduct = {
 
 /* ============================================================
 
- * CATEGORIES VIP
+ * CATEGORIES
 
  * ============================================================ */
 
@@ -235,7 +235,7 @@ export const catalogBranding: CatalogBranding = {
 
 /* ============================================================
 
- * VIP PRODUCTS
+ * PRODUCTS
 
  *
 

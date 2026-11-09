@@ -338,6 +338,10 @@ export class ProductsComponent implements OnInit {
 
   statusFilter: CatalogItemStatus | '' = '';
 
+  minPriceFilter = '';
+
+  maxPriceFilter = '';
+
   sortBy: 'order' | 'name' | 'code' | 'price' = 'order';
 
   sortDirection: 'asc' | 'desc' = 'asc';
@@ -470,7 +474,11 @@ export class ProductsComponent implements OnInit {
 
 
 
-        return matchesSearch && matchesCategory && matchesStatus;
+        const minimum = this.minPriceFilter.trim() === '' ? null : Number(this.minPriceFilter);
+        const maximum = this.maxPriceFilter.trim() === '' ? null : Number(this.maxPriceFilter);
+        const matchesMinPrice = minimum === null || item.price >= minimum;
+        const matchesMaxPrice = maximum === null || item.price <= maximum;
+        return matchesSearch && matchesCategory && matchesStatus && matchesMinPrice && matchesMaxPrice;
 
       })
 
@@ -596,6 +604,39 @@ export class ProductsComponent implements OnInit {
   }
 
 
+
+  onMinPriceChange(event: Event): void {
+    this.minPriceFilter = (event.target as HTMLInputElement).value;
+  }
+
+  onMaxPriceChange(event: Event): void {
+    this.maxPriceFilter = (event.target as HTMLInputElement).value;
+  }
+
+  applyFilters(): void {
+    const min = this.minPriceFilter.trim() === '' ? null : Number(this.minPriceFilter);
+    const max = this.maxPriceFilter.trim() === '' ? null : Number(this.maxPriceFilter);
+    if ((min !== null && (!Number.isFinite(min) || min < 0)) ||
+        (max !== null && (!Number.isFinite(max) || max < 0)) ||
+        (min !== null && max !== null && min > max)) {
+      this.errorMessage = 'Revisa el rango de precios: el mínimo no puede superar al máximo.';
+      return;
+    }
+    this.errorMessage = null;
+    this.resetPagination();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.categoryFilter = '';
+    this.statusFilter = '';
+    this.minPriceFilter = '';
+    this.maxPriceFilter = '';
+    this.sortBy = 'order';
+    this.sortDirection = 'asc';
+    this.errorMessage = null;
+    this.resetPagination();
+  }
 
   onSortChange(event: Event): void {
 
@@ -2472,9 +2513,6 @@ addInclude(): void {
   /* Genera un código automático para el producto. Se conserva al editarlo. */
 
   private generateProductCode(): string {
-
-    const catalogPrefix = this.catalogId === 'vip' ? 'CDF-VIP' : 'CDF-NOR';
-
     const now = new Date();
 
     const date = [
@@ -2497,8 +2535,7 @@ addInclude(): void {
 
 
 
-    return `${catalogPrefix}-${date}-${randomPart}`;
-
+    return `CDF-${date}-${randomPart}`;
   }
 
 

@@ -190,11 +190,9 @@ export class CatalogService {
     );
   }
 
-  private validateCatalogId(catalogId: CatalogId): void {
-    if (catalogId !== 'normal' && catalogId !== 'vip') {
-      throw new Error(
-        'Catálogo no válido. Solo se permiten los catálogos Normal y VIP.',
-      );
+  private validateCatalogId(catalogId: string): asserts catalogId is CatalogId {
+    if (catalogId !== 'normal') {
+      throw new Error('El administrador solo permite operar sobre el catálogo.');
     }
   }
 

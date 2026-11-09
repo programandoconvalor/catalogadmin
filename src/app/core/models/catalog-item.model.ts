@@ -1,5 +1,5 @@
 
-export type CatalogId = 'normal' | 'vip';
+export type CatalogId = 'normal';
 
 export type CatalogItemStatus = 'active' | 'inactive';
 

@@ -4,18 +4,11 @@ import {
   ChangeDetectorRef,
   Component,
   computed,
-  ElementRef,
   OnDestroy,
   OnInit,
-  QueryList,
   signal,
-  ViewChildren,
 } from '@angular/core';
-import {
-  NavigationEnd,
-  Router,
-  RouterModule,
-} from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { combineLatest, Subscription } from 'rxjs';
 
 import { SafeHtmlPipe } from '../../pipe/safe-html.pipe';
@@ -26,14 +19,7 @@ import { TenantContextService } from '../../../core/tenant/tenant-context.servic
 type NavItem = {
   name: string;
   icon: string;
-  path?: string;
-  new?: boolean;
-  subItems?: {
-    name: string;
-    path: string;
-    pro?: boolean;
-    new?: boolean;
-  }[];
+  path: string;
 };
 
 @Component({
@@ -47,7 +33,14 @@ type NavItem = {
   templateUrl: './app-sidebar.component.html',
 })
 export class AppSidebarComponent implements OnInit, OnDestroy {
-  navItems: NavItem[] = [
+  /**
+   * Navegación principal.
+   *
+   * IMPORTANTE:
+   * Todos los elementos son enlaces independientes.
+   * No se utilizan subItems ni menús desplegables.
+   */
+  readonly navItems: NavItem[] = [
     {
       name: 'Logo y Nombre',
       path: '/profile',
@@ -55,14 +48,14 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     },
     {
       name: 'Categorías',
-      path: '/catalogs/normal',
+      path: '/catalog/categories',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83V3H4v7h.83l9.58 9.59a2 2 0 0 0 2.83 0l3.35-3.35a2 2 0 0 0 0-2.83Z"/><circle cx="7.5" cy="7.5" r=".5"/></svg>`,
     },
     {
-  name: 'Productos',
-  path: '/catalogs/products',
-  icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.3 7.6 7.7 4.3 7.7-4.3M12 21v-9.1M8 5.2l8 4.5"/></svg>`,
-},
+      name: 'Productos',
+      path: '/catalog/products',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.3 7.6 7.7 4.3 7.7-4.3M12 21v-9.1M8 5.2l8 4.5"/></svg>`,
+    },
     {
       name: 'Redes Sociales',
       path: '/profile',
@@ -95,26 +88,13 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     },
   ];
 
-  othersItems: NavItem[] = [];
-
-  // Control del elemento seleccionado.
   activeMenuItem: string | null = null;
-
-  // Control del menú desplegable.
-  openSubmenu: string | null = null;
-
-  subMenuHeights: {
-    [key: string]: number;
-  } = {};
-
-  @ViewChildren('subMenu')
-  subMenuRefs!: QueryList<ElementRef>;
 
   readonly isExpanded$;
   readonly isMobileOpen$;
   readonly isHovered$;
 
-  private subscription: Subscription = new Subscription();
+  private subscription = new Subscription();
 
   private readonly failedTenantLogoUrl = signal<string | null>(null);
 
@@ -122,7 +102,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     public sidebarService: SidebarService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private tenantContextService: TenantContextService
+    private tenantContextService: TenantContextService,
   ) {
     this.isExpanded$ = this.sidebarService.isExpanded$;
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
@@ -144,22 +124,13 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       : null;
   });
 
-  onTenantLogoError(): void {
-    const logoUrl =
-      this.tenantContextService.tenant?.logoUrl?.trim();
-
-    if (logoUrl) {
-      this.failedTenantLogoUrl.set(logoUrl);
-    }
-  }
-
   ngOnInit(): void {
     this.subscription.add(
       this.router.events.subscribe((event) => {
         if (event instanceof NavigationEnd) {
           this.setActiveMenuFromRoute(event.urlAfterRedirects);
         }
-      })
+      }),
     );
 
     this.subscription.add(
@@ -171,7 +142,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
         if (!isExpanded && !isMobileOpen && !isHovered) {
           this.cdr.detectChanges();
         }
-      })
+      }),
     );
 
     this.setActiveMenuFromRoute(this.router.url);
@@ -181,126 +152,54 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
 
-  /**
-   * Comprueba si una opción específica está seleccionada.
-   * Compara por nombre, no por URL, porque temporalmente
-   * varias opciones comparten la misma ruta.
-   */
   isActive(name: string): boolean {
     return this.activeMenuItem === name;
   }
 
-  /**
-   * Selecciona exclusivamente una opción del menú.
-   */
   selectMenuItem(name: string): void {
     this.activeMenuItem = name;
   }
 
-  /**
-   * Controla la apertura y cierre de submenús.
-   */
-  toggleSubmenu(section: string, index: number): void {
-    const key = `${section}-${index}`;
+  onTenantLogoError(): void {
+    const logoUrl = this.tenantContextService.tenant?.logoUrl?.trim();
 
-    if (this.openSubmenu === key) {
-      this.openSubmenu = null;
-      this.subMenuHeights[key] = 0;
-      return;
+    if (logoUrl) {
+      this.failedTenantLogoUrl.set(logoUrl);
     }
+  }
 
-    this.openSubmenu = key;
-
-    setTimeout(() => {
-      const element = document.getElementById(key);
-
-      if (element) {
-        this.subMenuHeights[key] = element.scrollHeight;
-        this.cdr.detectChanges();
+  /**
+   * Cierra el Sidebar móvil después de navegar.
+   */
+  onNavigationClick(): void {
+    this.isMobileOpen$.subscribe((isMobile) => {
+      if (isMobile) {
+        this.sidebarService.setMobileOpen(false);
       }
-    });
+    }).unsubscribe();
   }
 
   onSidebarMouseEnter(): void {
-    this.isExpanded$
-      .subscribe((expanded) => {
-        if (!expanded) {
-          this.sidebarService.setHovered(true);
-        }
-      })
-      .unsubscribe();
+    this.isExpanded$.subscribe((expanded) => {
+      if (!expanded) {
+        this.sidebarService.setHovered(true);
+      }
+    }).unsubscribe();
   }
 
   /**
-   * Sincroniza el menú desplegable con la ruta.
-   *
-   * No selecciona opciones individuales por URL porque
-   * varias comparten temporalmente /profile y /catalogs/normal.
-   * La selección individual se controla mediante selectMenuItem().
+   * Sincroniza la opción activa con la ruta actual.
+   * No existe lógica de submenús.
    */
   private setActiveMenuFromRoute(currentUrl: string): void {
-  const cleanUrl = currentUrl.split('?')[0].split('#')[0];
+    const cleanUrl = currentUrl.split('?')[0].split('#')[0];
 
-  // Rutas que identifican una opción única del menú.
-  const routeMenuMap: Record<string, string> = {
-    '/catalogs/products': 'Productos',
-  };
+    const routeMenuMap: Record<string, string> = {
+      '/profile': 'Logo y Nombre',
+      '/catalog/products': 'Productos',
+      '/catalog/categories': 'Categorías',
+    };
 
-  const activeItem = routeMenuMap[cleanUrl];
-
-  if (activeItem) {
-    this.activeMenuItem = activeItem;
-  }
-
-  // Conservamos el comportamiento de los submenús existentes.
-  const menuGroups = [
-    {
-      items: this.navItems,
-      prefix: 'main',
-    },
-    {
-      items: this.othersItems,
-      prefix: 'others',
-    },
-  ];
-
-  menuGroups.forEach((group) => {
-    group.items.forEach((nav, index) => {
-      if (!nav.subItems) {
-        return;
-      }
-
-      const hasActiveSubItem = nav.subItems.some(
-        (subItem) => cleanUrl === subItem.path,
-      );
-
-      if (!hasActiveSubItem) {
-        return;
-      }
-
-      const key = `${group.prefix}-${index}`;
-
-      this.openSubmenu = key;
-
-      setTimeout(() => {
-        const element = document.getElementById(key);
-
-        if (element) {
-          this.subMenuHeights[key] = element.scrollHeight;
-          this.cdr.detectChanges();
-        }
-      });
-    });
-  });
-}
-
-  onSubmenuClick(): void {
-    this.isMobileOpen$
-      .subscribe((isMobile) => {
-        if (isMobile) {
-          this.sidebarService.setMobileOpen(false);
-        }
-      })
-      .unsubscribe();
+    this.activeMenuItem = routeMenuMap[cleanUrl] ?? null;
   }
 }

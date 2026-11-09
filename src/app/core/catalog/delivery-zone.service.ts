@@ -148,14 +148,13 @@ export class DeliveryZoneService {
       );
     }
 
-    // La colección pertenece al tenant.
-    // Cada documento se separa mediante catalogId: normal o vip.
+    // La colección pertenece al tenant y conserva catalogId para compatibilidad.
     return collection(db, 'tenants', tenantId, 'deliveryZones');
   }
 
-  private validateCatalogId(catalogId: CatalogId): void {
-    if (catalogId !== 'normal' && catalogId !== 'vip') {
-      throw new Error('El catálogo debe ser normal o vip.');
+  private validateCatalogId(catalogId: string): asserts catalogId is CatalogId {
+    if (catalogId !== 'normal') {
+      throw new Error('El administrador solo permite operar sobre el catálogo.');
     }
   }
 
