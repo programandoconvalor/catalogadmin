@@ -5,7 +5,7 @@ import {
   deleteField,
   deleteDoc,
   doc,
-  getDoc,
+  getDocFromServer,
   getDocs,
   serverTimestamp,
   updateDoc,
@@ -18,6 +18,10 @@ import type {
   CatalogItemInput,
 } from '../models/catalog-item.model';
 
+import {
+  mapCatalogItem,
+  normalizeCatalogIncludes,
+} from './catalog-item.mapper';
 import { db } from '../firebase/firebase';
 import { TenantContextService } from '../tenant/tenant-context.service';
 
@@ -31,12 +35,8 @@ export class CatalogService {
     const snapshot = await getDocs(this.itemsCollection(catalogId));
 
     return snapshot.docs
-      .map(
-        (itemSnapshot) =>
-          ({
-            ...itemSnapshot.data(),
-            id: itemSnapshot.id,
-          }) as CatalogItem,
+      .map((itemSnapshot) =>
+        mapCatalogItem(itemSnapshot.id, itemSnapshot.data()),
       )
       .sort((first, second) => first.sortOrder - second.sortOrder);
   }
@@ -45,7 +45,9 @@ export class CatalogService {
     catalogId: CatalogId,
     itemId: string,
   ): Promise<CatalogItem | null> {
-    const snapshot = await getDoc(
+    // La edición debe partir siempre del documento más reciente de Firestore,
+    // no de una posible copia desactualizada de la caché local.
+    const snapshot = await getDocFromServer(
       this.itemDocument(catalogId, itemId),
     );
 
@@ -53,10 +55,7 @@ export class CatalogService {
       return null;
     }
 
-    return {
-      ...snapshot.data(),
-      id: snapshot.id,
-    } as CatalogItem;
+    return mapCatalogItem(snapshot.id, snapshot.data());
   }
 
   async createItem(
@@ -67,8 +66,16 @@ export class CatalogService {
     const tenantId = this.requireTenantId();
     const collectionPath =
       `tenants/${tenantId}/catalogs/${catalogId}/items`;
+    const includes = normalizeCatalogIncludes(
+      item.commercialData?.includes ?? item.includes,
+    );
+
     const payload: DocumentData = {
       ...item,
+      includes,
+      commercialData: item.commercialData
+        ? { ...item.commercialData, includes }
+        : item.commercialData,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -105,6 +112,10 @@ export class CatalogService {
     item: Partial<CatalogItemInput>,
   ): Promise<void> {
     this.validateCatalogId(catalogId);
+    const canonicalIncludes = normalizeCatalogIncludes(
+      item.commercialData?.includes ?? item.includes,
+    );
+
     const updates: DocumentData = {
       ...item,
       updatedAt: serverTimestamp(),
@@ -117,6 +128,18 @@ export class CatalogService {
           updates[`commercialData.${field}`] = value;
         }
       }
+    }
+
+    // Mantiene sincronizado el campo raíz usado por documentos existentes
+    // y commercialData.includes usado por el modelo comercial actual.
+    if (
+      Object.hasOwn(item, 'includes') ||
+      item.commercialData?.includes !== undefined
+    ) {
+      // Ambos campos se escriben desde el mismo arreglo canónico.
+      // Esto evita que la lectura priorice un valor raíz desactualizado.
+      updates['includes'] = canonicalIncludes;
+      updates['commercialData.includes'] = canonicalIncludes;
     }
 
     if (

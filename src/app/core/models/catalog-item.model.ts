@@ -107,6 +107,12 @@ export interface CatalogItem {
   status: CatalogItemStatus;
   sortOrder: number;
 
+  /**
+   * Campo legado/compatibilidad almacenado en la raíz del documento.
+   * Se mantiene sincronizado con commercialData.includes.
+   */
+  includes?: string[];
+
   commercialData?: CatalogProductCommercialData;
 
   schemaVersion?: number;

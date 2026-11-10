@@ -52,9 +52,7 @@ import {
 } from '../../core/storage/storage.service';
 
 import {
-
   CatalogId,
-
   CatalogItem,
 
   CatalogItemInput,
@@ -64,8 +62,9 @@ import {
   CatalogProductCommercialData,
 
   CatalogProductSize,
-
 } from '../../core/models/catalog-item.model';
+
+import { normalizeCatalogIncludes } from '../../core/catalog/catalog-item.mapper';
 
 import {
 
@@ -74,7 +73,6 @@ import {
   CategoryInput,
 
   CategoryStatus,
-
 } from '../../core/models/category.model';
 
 import { NotificationService } from '../../core/notifications/notification.service';
@@ -463,6 +461,14 @@ export class ProductsComponent implements OnInit {
 
     this.destroyRef.onDestroy(() => this.releaseImagePreviews());
 
+    this.includes.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((values) => {
+        this.validIncludesCount =
+          normalizeCatalogIncludes(values).length;
+        this.changeDetectorRef.markForCheck();
+      });
+
   }
 
 
@@ -620,10 +626,10 @@ export class ProductsComponent implements OnInit {
 
 
   get includes(): FormArray<FormControl<string>> {
-
     return this.itemForm.controls.includes;
-
   }
+
+  validIncludesCount = 0;
 
 
 
@@ -947,11 +953,7 @@ export class ProductsComponent implements OnInit {
 
       }));
 
-    const includes = this.includes.getRawValue()
-
-      .map((item) => item.trim())
-
-      .filter(Boolean);
+    const includes = normalizeCatalogIncludes(this.includes.getRawValue());
 
     const basePriceMxn = Number(value.price);
 
@@ -1002,6 +1004,9 @@ export class ProductsComponent implements OnInit {
       status: value.status,
 
       sortOrder,
+
+      // Fuente canónica compartida con commercialData.includes.
+      includes,
 
       commercialData: this.buildCommercialData({
 
@@ -1187,6 +1192,10 @@ export class ProductsComponent implements OnInit {
 
           );
 
+          // Firestore confirmó la escritura; evita limpiar imágenes ya referenciadas
+          // si la lectura posterior del documento llegara a fallar.
+          documentSaved = true;
+
         } catch (firestoreError) {
 
           throw firestoreError;
@@ -1195,26 +1204,27 @@ export class ProductsComponent implements OnInit {
 
 
 
+        // Recupera el documento confirmado por el servidor para mantener
+        // sincronizada la lista con la misma información que abrirá el modal.
+        const savedItem = await this.catalogService.getItem(
+          this.catalogId,
+          itemId,
+        );
+
+        if (!savedItem) {
+          throw new Error(
+            'El producto se guardó, pero no fue posible recuperar su información actualizada.',
+          );
+        }
+
         this.runInAngular(() => {
-
           this.items = this.items
-
             .map((existing) =>
-
-              existing.id === itemId
-
-                ? { ...existing, ...itemToSave }
-
-                : existing,
-
+              existing.id === itemId ? savedItem : existing,
             )
-
             .sort((first, second) => first.sortOrder - second.sortOrder);
 
-
-
           this.successMessage = 'Producto actualizado correctamente.';
-
         });
 
       } else {
@@ -2500,7 +2510,11 @@ export class ProductsComponent implements OnInit {
 
     }
 
-    for (const include of commercialData?.includes ?? []) {
+    const normalizedIncludes = normalizeCatalogIncludes(
+      commercialData?.includes,
+    );
+
+    for (const include of normalizedIncludes) {
 
       this.includes.push(this.formBuilder.control(include));
 

@@ -2,7 +2,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CatalogService } from '../../core/catalog/catalog.service';
 import { CategoryService } from '../../core/catalog/category.service';
 import { DeliveryZoneService } from '../../core/catalog/delivery-zone.service';
-import { CatalogItem, CatalogProductCommercialData } from '../../core/models/catalog-item.model';
+import {
+  CatalogItem,
+  CatalogItemInput,
+  CatalogProductCommercialData,
+} from '../../core/models/catalog-item.model';
+import { normalizeCatalogIncludes } from '../../core/catalog/catalog-item.mapper';
 import { NotificationService } from '../../core/notifications/notification.service';
 import { StorageService } from '../../core/storage/storage.service';
 import { ProductsComponent } from './products.component';
@@ -12,6 +17,21 @@ describe('ProductsComponent', () => {
   let fixture: ComponentFixture<ProductsComponent>;
   let catalogService: jasmine.SpyObj<CatalogService>;
   let notificationService: jasmine.SpyObj<NotificationService>;
+
+  function includeCounter(): string {
+    const headings = fixture.nativeElement.querySelectorAll(
+      '.catalog-images-heading',
+    ) as NodeListOf<HTMLElement>;
+    const includeHeading = Array.from(headings).find((heading) =>
+      heading.querySelector('h3')?.textContent?.includes('incluye'),
+    );
+
+    return (
+      includeHeading
+        ?.querySelector('[aria-label="Contador de elementos incluidos"]')
+        ?.textContent?.trim() ?? ''
+    );
+  }
 
   beforeEach(async () => {
     catalogService = jasmine.createSpyObj<CatalogService>(
@@ -354,7 +374,274 @@ describe('ProductsComponent', () => {
     expect(catalogService.createItem).toHaveBeenCalledTimes(3);
     expect(catalogService.updateItem).toHaveBeenCalledTimes(3);
   });
+
+  it('case 1: adds two includes and retains all three after closing and reopening', async () => {
+    await fixture.whenStable();
+    const product = makeProduct('includes-add', 1, {
+      ...makeCommercialData(),
+      includes: undefined,
+    });
+    product.includes = ['targeta'];
+    const persisted = mockPersistedIncludes(catalogService, [product]);
+    component.items = [product];
+
+    await component.openEditItem(product);
+    component.addInclude();
+    component.includes.at(1).setValue('moño');
+    component.addInclude();
+    component.includes.at(2).setValue('peluche');
+    fixture.detectChanges();
+
+    await component.saveItem();
+    const saved = persisted.get(product.id);
+    expect(saved?.commercialData?.includes).toEqual([
+      'targeta',
+      'moño',
+      'peluche',
+    ]);
+    expect(saved?.includes).toEqual(saved?.commercialData?.includes);
+
+    await component.openEditItem(component.items[0]);
+    fixture.detectChanges();
+    expect(component.includes.getRawValue()).toEqual([
+      'targeta',
+      'moño',
+      'peluche',
+    ]);
+    expect(includeCounter()).toBe('3/3 elementos');
+  });
+
+  it('case 2: removes an include and retains only the remaining values after reopening', async () => {
+    await fixture.whenStable();
+    const product = makeProduct('includes-remove', 1, {
+      ...makeCommercialData(),
+      includes: ['targeta', 'moño', 'peluche'],
+    });
+    const persisted = mockPersistedIncludes(catalogService, [product]);
+    component.items = [product];
+
+    await component.openEditItem(product);
+    component.removeInclude(1);
+    fixture.detectChanges();
+    expect(
+      Array.from(
+        fixture.nativeElement.querySelectorAll(
+          '[aria-label^="Elemento incluido "]',
+        ) as NodeListOf<HTMLInputElement>,
+      ).map((input) => input.value),
+    ).toEqual(['targeta', 'peluche']);
+    await component.saveItem();
+
+    expect(persisted.get(product.id)?.commercialData?.includes).toEqual([
+      'targeta',
+      'peluche',
+    ]);
+
+    await component.openEditItem(component.items[0]);
+    fixture.detectChanges();
+    expect(component.includes.getRawValue()).toEqual(['targeta', 'peluche']);
+    expect(includeCounter()).toBe('2/3 elementos');
+  });
+
+  it('case 3: replaces edited values without retaining the old values', async () => {
+    await fixture.whenStable();
+    const product = makeProduct('includes-update', 1, {
+      ...makeCommercialData(),
+      includes: ['targeta', 'moño', 'peluche'],
+    });
+    const persisted = mockPersistedIncludes(catalogService, [product]);
+    component.items = [product];
+
+    await component.openEditItem(product);
+    component.includes.at(1).setValue('chocolate');
+    component.includes.at(2).setValue('rosa');
+    await component.saveItem();
+
+    expect(persisted.get(product.id)?.commercialData?.includes).toEqual([
+      'targeta',
+      'chocolate',
+      'rosa',
+    ]);
+
+    await component.openEditItem(component.items[0]);
+    fixture.detectChanges();
+    expect(component.includes.getRawValue()).toEqual([
+      'targeta',
+      'chocolate',
+      'rosa',
+    ]);
+  });
+
+  it('case 4: combines removal, replacement, and addition without duplicates or residual values', async () => {
+    await fixture.whenStable();
+    const product = makeProduct('includes-combined', 1, {
+      ...makeCommercialData(),
+      includes: ['targeta', 'moño', 'peluche'],
+    });
+    const persisted = mockPersistedIncludes(catalogService, [product]);
+    component.items = [product];
+
+    await component.openEditItem(product);
+    component.removeInclude(1);
+    component.includes.at(0).setValue('tarjeta personalizada');
+    component.addInclude();
+    component.includes.at(2).setValue('chocolate');
+    await component.saveItem();
+
+    const expected = ['tarjeta personalizada', 'peluche', 'chocolate'];
+    expect(persisted.get(product.id)?.commercialData?.includes).toEqual(expected);
+
+    await component.openEditItem(component.items[0]);
+    fixture.detectChanges();
+    const reopenedIncludes = component.includes.getRawValue();
+    expect(reopenedIncludes).toEqual(expected);
+    expect(new Set(reopenedIncludes).size).toBe(reopenedIncludes.length);
+    expect(reopenedIncludes.every((include) => include.length > 0)).toBeTrue();
+  });
+
+  it('case 5: cleans empty values, enforces three entries, persists clearing, and isolates products', async () => {
+    await fixture.whenStable();
+    const emptyProduct = makeProduct('includes-empty', 1, {
+      ...makeCommercialData(),
+      includes: [],
+    });
+    const otherProduct = makeProduct('includes-other', 2, {
+      ...makeCommercialData(),
+      includes: ['Rosa'],
+    });
+    const persisted = mockPersistedIncludes(catalogService, [
+      emptyProduct,
+      otherProduct,
+    ]);
+    component.items = [emptyProduct, otherProduct];
+
+    await component.openEditItem(emptyProduct);
+    fixture.detectChanges();
+    expect(component.includes.getRawValue()).toEqual([]);
+    expect(includeCounter()).toBe('0/3 elementos');
+
+    component.addInclude();
+    component.includes.at(0).setValue('   ');
+    component.addInclude();
+    component.includes.at(1).setValue('');
+    component.addInclude();
+    component.includes.at(2).setValue('  Moño  ');
+    fixture.detectChanges();
+    expect(component.includes.getRawValue()).toEqual(['   ', '', '  Moño  ']);
+    expect(component.validIncludesCount).toBe(1);
+    expect(includeCounter()).toBe('1/3 elementos');
+    await component.saveItem();
+    expect(persisted.get(emptyProduct.id)?.commercialData?.includes).toEqual([
+      'Moño',
+    ]);
+
+    await component.openEditItem(component.items[0]);
+    component.addInclude();
+    component.includes.at(1).setValue('Tarjeta');
+    component.addInclude();
+    component.includes.at(2).setValue('Peluche');
+    component.addInclude();
+    expect(component.includes.length).toBe(3);
+    expect(component.includes.getRawValue()).toEqual([
+      'Moño',
+      'Tarjeta',
+      'Peluche',
+    ]);
+    expect(component.validIncludesCount).toBe(3);
+    fixture.detectChanges();
+    expect(includeCounter()).toBe('3/3 elementos');
+    await component.saveItem();
+    expect(persisted.get(emptyProduct.id)?.commercialData?.includes).toEqual([
+      'Moño',
+      'Tarjeta',
+      'Peluche',
+    ]);
+
+    await component.openEditItem(component.items[0]);
+    while (component.includes.length > 0) {
+      component.removeInclude(component.includes.length - 1);
+    }
+    expect(component.validIncludesCount).toBe(0);
+    await component.saveItem();
+    expect(persisted.get(emptyProduct.id)?.commercialData?.includes).toEqual([]);
+
+    await component.openEditItem(component.items[0]);
+    fixture.detectChanges();
+    expect(component.includes.getRawValue()).toEqual([]);
+    expect(includeCounter()).toBe('0/3 elementos');
+
+    component.closeItemModal();
+    await component.openEditItem(otherProduct);
+    fixture.detectChanges();
+    expect(component.includes.getRawValue()).toEqual(['Rosa']);
+    expect(includeCounter()).toBe('1/3 elementos');
+    expect(
+      Array.from(
+        fixture.nativeElement.querySelectorAll(
+          '[aria-label^="Elemento incluido "]',
+        ) as NodeListOf<HTMLInputElement>,
+      ).map((input) => input.value),
+    ).toEqual(['Rosa']);
+    expect(persisted.get(otherProduct.id)?.commercialData?.includes).toEqual([
+      'Rosa',
+    ]);
+
+  });
 });
+
+function mockPersistedIncludes(
+  service: jasmine.SpyObj<CatalogService>,
+  products: CatalogItem[],
+): Map<string, CatalogItem> {
+  const persisted = new Map<string, CatalogItem>();
+
+  for (const product of products) {
+    const sourceIncludes = Array.isArray(product.commercialData?.includes)
+      ? product.commercialData.includes
+      : product.includes;
+    const includes = normalizeCatalogIncludes(sourceIncludes);
+    persisted.set(product.id, {
+      ...product,
+      includes,
+      commercialData: product.commercialData
+        ? { ...product.commercialData, includes }
+        : product.commercialData,
+    });
+  }
+
+  service.getItem.and.callFake(async (_catalogId, itemId) =>
+    persisted.get(itemId) ?? null,
+  );
+  service.updateItem.and.callFake(async (_catalogId, itemId, updates) => {
+    const current = persisted.get(itemId);
+    if (!current) {
+      throw new Error(`Test product ${itemId} was not found.`);
+    }
+
+    const sourceIncludes =
+      updates.commercialData?.includes ??
+      updates.includes ??
+      current.commercialData?.includes ??
+      current.includes;
+    const includes = normalizeCatalogIncludes(sourceIncludes);
+    persisted.set(itemId, {
+      ...current,
+      ...updates,
+      includes,
+      commercialData: current.commercialData
+        ? {
+            ...current.commercialData,
+            ...updates.commercialData,
+            includes,
+          }
+        : updates.commercialData
+          ? { ...updates.commercialData, includes }
+          : undefined,
+    });
+  });
+
+  return persisted;
+}
 
 function makeProduct(
   id: string,

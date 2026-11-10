@@ -881,29 +881,23 @@
 
             </label>
 
-            <div class="catalog-availability catalog-status-switch">
+            <label class="catalog-availability catalog-status-switch">
               <span class="catalog-status-copy">
                 <span>Estado administrativo: <b aria-hidden="true">*</b></span>
                 <small>{{ itemForm.controls.status.value === 'active' ? 'Activo' : 'Inactivo' }}</small>
               </span>
 
               <input
-
                 type="checkbox"
-
                 [checked]="itemForm.controls.status.value === 'active'"
-
                 (change)="itemForm.controls.status.setValue($any($event.target).checked ? 'active' : 'inactive')"
-
                 [disabled]="savingItem || uploadingImage"
-
                 role="switch"
-
-                aria-required="true"
-
+                aria-label="Estado administrativo del producto"
+                [attr.aria-checked]="itemForm.controls.status.value === 'active'"
               />
               <span class="catalog-toggle" aria-hidden="true"></span>
-            </div>
+            </label>
 
           </div>
 
@@ -1104,15 +1098,18 @@
 
           <div class="catalog-images-heading">
             <h3>El producto incluye ó contiene:</h3>
-            <span class="catalog-images-count">{{ includes.length }}/3 elementos</span>
+            <span
+              class="catalog-images-count"
+              aria-label="Contador de elementos incluidos"
+            >{{ validIncludesCount }}/3 elementos</span>
           </div>
-          <div formArrayName="includes" class="catalog-list-editor">
+          <div class="catalog-list-editor">
 
             @for (include of includes.controls; track $index) {
 
               <div class="catalog-editable-row">
 
-                <input [formControlName]="$index" [attr.aria-label]="'Elemento incluido ' + ($index + 1)" placeholder="Escribe un elemento incluido, ejemplo: Tarjeta para dedicatoria" />
+                <input [formControl]="include" [attr.aria-label]="'Elemento incluido ' + ($index + 1)" placeholder="Escribe un elemento incluido, ejemplo: Tarjeta para dedicatoria" />
 
                 <button
 
