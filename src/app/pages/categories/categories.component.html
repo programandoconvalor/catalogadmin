@@ -29,7 +29,6 @@
       </button>
     </header>
 
-    <!-- FILTROS: FILTRAR Y LIMPIAR SIEMPRE VISIBLES -->
     <section class="category-toolbar" role="search" aria-label="Filtros de categorías">
       <label class="category-search-field">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -40,7 +39,6 @@
           type="search"
           [value]="searchTerm"
           (input)="onSearchChange($any($event.target).value)"
-          (keydown.enter)="applyFilters()"
           placeholder="Buscar categoría..."
           aria-label="Buscar categoría por nombre"
         />
@@ -79,21 +77,6 @@
         </svg>
       </button>
 
-      <div class="category-filter-actions">
-        <button type="button" class="category-filter-button" (click)="applyFilters()">
-          <svg viewBox="0 0 20 20" aria-hidden="true">
-            <path d="M3 4h14l-5.5 6.2v4.3l-3 1.5v-5.8L3 4Z" />
-          </svg>
-          Filtrar
-        </button>
-
-        <button type="button" class="category-clear-button" (click)="clearFilters()">
-          <svg viewBox="0 0 20 20" aria-hidden="true">
-            <path d="M16 7a6.5 6.5 0 1 0 1 4M16 3v4h-4" />
-          </svg>
-          Limpiar
-        </button>
-      </div>
     </section>
 
     @if (loading && categories.length === 0) {
@@ -113,7 +96,7 @@
         <h3>{{ hasActiveFilters ? 'No encontramos categorías' : 'Todavía no hay categorías' }}</h3>
         <p>
           {{ hasActiveFilters
-            ? 'No hay resultados con los filtros aplicados. Prueba con otros criterios o pulsa Limpiar.'
+            ? 'No hay resultados con los filtros actuales. Prueba con otros criterios.'
             : 'Crea tu primera categoría para organizar tus productos.' }}
         </p>
 
@@ -147,7 +130,6 @@
                     </span>
                     <span class="category-name-text">
                       <strong>{{ category.name }}</strong>
-                      <small>ID: {{ category.id }}</small>
                     </span>
                   </div>
                 </td>
@@ -249,7 +231,7 @@
 
 <app-modal
   [isOpen]="modalOpen"
-  [showCloseButton]="!saving"
+  [showCloseButton]="!saving || savePending"
   position="center"
   backdropClassName="bg-gray-950/55 backdrop-blur-[2px]"
   className="category-dialog max-w-[560px] p-0"
@@ -286,30 +268,81 @@
 
       <label class="category-input-group">
         <span>Orden de visualización <b>*</b></span>
-        <input type="number" min="0" step="1" formControlName="sortOrder" />
+        <input
+          type="number"
+          min="1"
+          step="1"
+          formControlName="sortOrder"
+          (input)="onSortOrderInput()"
+        />
         @if (categoryForm.controls.sortOrder.touched && categoryForm.controls.sortOrder.invalid) {
-          <em>El orden debe ser cero o un número mayor.</em>
+          @if (categoryForm.controls.sortOrder.hasError('duplicateOrder')) {
+            <em>Este orden ya está asignado a otra categoría.</em>
+          } @else if (categoryForm.controls.sortOrder.hasError('wholeNumber')) {
+            <em>El orden debe ser un número entero.</em>
+          } @else if (categoryForm.controls.sortOrder.hasError('min')) {
+            <em>El orden debe ser un número mayor o igual a 1.</em>
+          } @else {
+            <em>Ingresa un orden válido para la categoría.</em>
+          }
         }
       </label>
 
-      <label class="category-input-group">
-        <span>Estado <b>*</b></span>
-        <select formControlName="status">
-          <option value="active">Activa</option>
-          <option value="inactive">Inactiva</option>
-        </select>
+      <div class="category-input-group category-status-field">
+        <div class="category-status-copy">
+          <span>Estado administrativo <b>*</b></span>
+          <strong>
+            {{ categoryForm.controls.status.value === 'active' ? 'Activo' : 'Inactivo' }}
+          </strong>
+        </div>
+        <label
+          class="category-switch"
+          [attr.aria-label]="'Estado administrativo: ' + (categoryForm.controls.status.value === 'active' ? 'Activo' : 'Inactivo')"
+        >
+          <input
+            class="category-switch-input"
+            type="checkbox"
+            role="switch"
+            [checked]="categoryForm.controls.status.value === 'active'"
+            (change)="toggleCategoryStatus()"
+          />
+          <span class="category-switch-track" aria-hidden="true"></span>
+        </label>
         <small>Las categorías inactivas no estarán disponibles para asignar productos.</small>
-      </label>
+      </div>
     </div>
 
     <footer class="category-form-footer">
-      <button type="button" class="category-cancel-button" (click)="closeModal()" [disabled]="saving">
+      <button
+        type="button"
+        class="category-cancel-button"
+        (click)="closeModal()"
+        [disabled]="saving && !savePending"
+      >
         Cancelar
       </button>
-      <button type="submit" class="category-save-button" [disabled]="categoryForm.invalid || saving">
-        {{ saving ? 'Guardando...' : editingCategoryId ? 'Guardar cambios' : 'Crear categoría' }}
+      <button
+        type="submit"
+        class="category-save-button"
+        [disabled]="categoryForm.invalid || saving || savePending"
+      >
+        {{
+          saving
+            ? 'Guardando...'
+            : savePending
+              ? 'Esperando respuesta...'
+              : editingCategoryId
+                ? 'Guardar cambios'
+                : 'Crear categoría'
+        }}
       </button>
     </footer>
+    @if (savePending) {
+      <p class="category-save-pending px-6 pb-5 text-sm text-warning-700 dark:text-warning-400" role="status" aria-live="polite">
+        El guardado aún está en proceso. No lo envíes de nuevo para evitar duplicados.
+        Puedes cerrar esta ventana; la lista se actualizará cuando Firebase confirme la operación.
+      </p>
+    }
   </form>
 </app-modal>
 

@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="products-page">
 
   @if (errorMessage) {
 
@@ -38,42 +38,28 @@
 
   <section
 
-    class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
-
+    class="products-page-card overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
   >
-
     <div
-
-      class="flex flex-col gap-4 border-b border-gray-100 px-5 py-5 dark:border-gray-800 sm:px-6 lg:flex-row lg:items-center lg:justify-between"
-
+      class="products-page-header flex flex-col gap-4 border-b border-gray-100 px-5 py-5 dark:border-gray-800 sm:px-6 lg:flex-row lg:items-center lg:justify-between"
     >
-
-      <div>
-
-        <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-
-          Productos
-
-        </h2>
-
-        <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-
-          Administra los productos que se mostrarán en tu catálogo.
-
-        </p>
-
+      <div class="products-heading">
+        <span class="products-heading-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+            <path d="m4.3 7.6 7.7 4.3 7.7-4.3M12 21v-9.1M8 5.2l8 4.5" />
+          </svg>
+        </span>
+        <div>
+          <h2>Productos</h2>
+          <p>Administra los productos que se mostrarán en tu catálogo.</p>
+        </div>
       </div>
-
       <div class="flex flex-wrap items-center gap-2">
-
         <div
-
-          class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-900"
-
+          class="products-view-toggle"
           role="group"
-
           aria-label="Vista de productos"
-
         >
 
           <button
@@ -160,8 +146,8 @@
 
 
 
-    <div class="catalog-toolbar" role="search" aria-label="Filtros de productos">
-      <div class="catalog-toolbar-search">
+    <div class="products-toolbar" role="search" aria-label="Filtros de productos">
+      <div class="products-toolbar-search">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
         <input id="catalog-search" type="search" aria-label="Buscar productos por código, nombre o descripción" [value]="searchTerm" (input)="onSearchChange($event)" placeholder="Buscar producto..." />
       </div>
@@ -172,17 +158,12 @@
       <select aria-label="Filtrar por estado" [value]="statusFilter" (change)="onStatusFilterChange($event)" class="catalog-toolbar-select">
         <option value="">Todos los estados</option><option value="active">Activo</option><option value="inactive">Agotado</option>
       </select>
-      <div class="catalog-sort-control">
+      <div class="products-sort-control">
         <select aria-label="Ordenar productos" [value]="sortBy" (change)="onSortChange($event)" class="catalog-toolbar-select">
-          <option value="order">Más recientes</option><option value="name">Nombre</option><option value="code">Código</option><option value="price">Precio</option>
+          <option value="order">Orden personalizado</option><option value="name">Nombre</option><option value="code">Código</option>
         </select>
-        <button type="button" class="catalog-sort-direction" [attr.aria-label]="sortDirection === 'asc' ? 'Orden ascendente' : 'Orden descendente'" (click)="toggleSortDirection()"><svg viewBox="0 0 20 20" aria-hidden="true" [class.rotate-180]="sortDirection === 'desc'"><path d="M10 4v12m0 0 5-5m-5 5-5-5"></path></svg></button>
+        <button type="button" class="products-sort-direction" [attr.aria-label]="sortDirection === 'asc' ? 'Orden ascendente' : 'Orden descendente'" (click)="toggleSortDirection()"><svg viewBox="0 0 20 20" aria-hidden="true" [class.is-desc]="sortDirection === 'desc'"><path d="M10 4v12m0 0 5-5m-5 5-5-5"></path></svg></button>
       </div>
-      <span class="catalog-price-symbol" aria-hidden="true">$</span>
-      <label class="catalog-price-field"><span>Precio</span><input type="number" min="0" inputmode="decimal" placeholder="Mín." aria-label="Precio mínimo" [value]="minPriceFilter" (input)="onMinPriceChange($event)" /></label>
-      <label class="catalog-price-field catalog-price-field-max"><span class="catalog-price-label-spacer" aria-hidden="true">Precio</span><input type="number" min="0" inputmode="decimal" placeholder="Máx." aria-label="Precio máximo" [value]="maxPriceFilter" (input)="onMaxPriceChange($event)" /></label>
-      <button type="button" class="catalog-filter-button" (click)="applyFilters()"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14l-5.5 6.2v4.3l-3 1.5v-5.8L3 4Z"></path></svg>Filtrar</button>
-      <button type="button" class="catalog-clear-button" (click)="clearFilters()"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 7a6.5 6.5 0 1 0 1 4M16 3v4h-4"></path></svg>Limpiar</button>
     </div>
 
     @if (loading) {
@@ -193,29 +174,36 @@
 
       </div>
 
-    } @else if (filteredItems.length === 0) {
+    } @else if (!errorMessage && filteredItems.length === 0) {
 
-      <div class="px-6 py-12 text-center">
-
-        <p class="font-medium text-gray-800 dark:text-white/90">
-
-          {{ searchTerm || categoryFilter || statusFilter || minPriceFilter || maxPriceFilter ? 'No se encontraron productos.' : 'Aún no hay productos en este catálogo.' }}
-
+      <div class="products-empty-state">
+        <span class="products-empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+            <path d="m4.3 7.6 7.7 4.3 7.7-4.3M12 21v-9.1M8 5.2l8 4.5" />
+          </svg>
+        </span>
+        <h3>{{ hasActiveFilters ? 'No encontramos productos' : 'Todavía no hay productos' }}</h3>
+        <p>
+          {{ hasActiveFilters
+            ? 'No hay resultados con esta búsqueda o filtros. Prueba con otros criterios.'
+            : 'Agrega tu primer producto para comenzar a mostrar tu catálogo.' }}
         </p>
-
-        @if (!searchTerm && !categoryFilter && !statusFilter && !minPriceFilter && !maxPriceFilter) {
-
-          <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-
-            Crea un producto para comenzar. Los datos se guardarán en el catálogo .
-
-          </p>
-
+        @if (!hasActiveFilters && items.length === 0) {
+          <button
+            type="button"
+            class="products-empty-action"
+            (click)="openCreateItem()"
+          >
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 4v12m6-6H4" />
+            </svg>
+            Agregar primer producto
+          </button>
         }
-
       </div>
 
-    } @else {
+    } @else if (!errorMessage) {
 
       @if (viewMode === 'cards') {
 
@@ -515,53 +503,49 @@
 
     }
 
+    @if (!loading && filteredItems.length > 0) {
+      <footer class="products-pagination">
+        <div class="products-pagination-summary">
+          Mostrando
+          <strong>{{ firstVisibleItem }}–{{ lastVisibleItem }}</strong>
+          de
+          <strong>{{ filteredItems.length }}</strong>
+          productos
+        </div>
+
+        <div class="products-pagination-controls">
+          <label class="products-page-size-label">
+            Por página
+            <select class="products-page-size" [value]="pageSize" (change)="changePageSize($event)">
+              @for (size of pageSizeOptions; track size) {
+                <option [value]="size">{{ size }}</option>
+              }
+            </select>
+          </label>
+
+          <button
+            type="button"
+            class="products-page-button"
+            (click)="goToPage(currentPage - 1)"
+            [disabled]="currentPage === 1"
+          >
+            Anterior
+          </button>
+
+          <span class="products-page-indicator">Página {{ currentPage }} de {{ totalPages }}</span>
+
+          <button
+            type="button"
+            class="products-page-button"
+            (click)="goToPage(currentPage + 1)"
+            [disabled]="currentPage === totalPages"
+          >
+            Siguiente
+          </button>
+        </div>
+      </footer>
+    }
   </section>
-
-
-
-  @if (!loading && filteredItems.length > 0) {
-
-    <div class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-white/[0.03] sm:flex-row sm:items-center sm:justify-between">
-
-      <div class="text-sm text-gray-500 dark:text-gray-400">
-
-        Mostrando <strong class="text-gray-800 dark:text-white">{{ firstVisibleItem }}</strong>
-
-        a <strong class="text-gray-800 dark:text-white">{{ lastVisibleItem }}</strong>
-
-        de <strong class="text-gray-800 dark:text-white">{{ filteredItems.length }}</strong> productos
-
-      </div>
-
-      <div class="flex flex-wrap items-center gap-2">
-
-        <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-
-          Por página
-
-          <select [value]="pageSize" (change)="changePageSize($event)" class="h-9 rounded-lg border border-gray-200 bg-white px-2 dark:border-gray-700 dark:bg-gray-900">
-
-            @for (size of pageSizeOptions; track size) {
-
-              <option [value]="size">{{ size }}</option>
-
-            }
-
-          </select>
-
-        </label>
-
-        <button type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" class="rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-40 dark:border-gray-700">Anterior</button>
-
-        <span class="min-w-20 text-center text-sm text-gray-600 dark:text-gray-300">Página {{ currentPage }} de {{ totalPages }}</span>
-
-        <button type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" class="rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-40 dark:border-gray-700">Siguiente</button>
-
-      </div>
-
-    </div>
-
-  }
 
 
 
@@ -577,7 +561,7 @@
 
   backdropClassName="bg-gray-950/55 backdrop-blur-[2px]"
 
-  className="catalog-item-modal w-[min(1080px,calc(100vw-32px))] max-w-[1080px] p-0"
+  className="catalog-item-modal max-w-[920px] p-0"
 
   (close)="closeItemModal()"
 
@@ -597,14 +581,14 @@
 
     <header class="catalog-form-header">
 
-
-
       <div class="min-w-0">
-
+        <span class="catalog-form-eyebrow">CATÁLOGO</span>
         <h2>{{ editingItemId ? 'Editar producto' : 'Crear producto' }}</h2>
-
-        <p>Completa la información del arreglo floral</p>
-
+        <p>
+          {{ editingItemId
+            ? 'Actualiza la información de este producto.'
+            : 'Completa los datos para agregar un producto.' }}
+        </p>
       </div>
 
     </header>
@@ -645,7 +629,7 @@
 
             <label class="catalog-field">
 
-              <span>Código: *</span>
+              <span>Código: <b aria-hidden="true">*</b></span>
 
               <input
 
@@ -665,11 +649,11 @@
 
             <label class="catalog-field">
 
-              <span>Categoría: *</span>
+              <span>Categoría <b aria-hidden="true">*</b></span>
 
-              <select formControlName="categoryId">
+              <select formControlName="categoryId" required aria-required="true">
 
-                <option value="">Sin categoría</option>
+                <option value="">Selecciona una categoría</option>
 
                 @for (category of activeCategories; track category.id) {
 
@@ -678,14 +662,16 @@
                 }
 
               </select>
+              @if (itemForm.controls.categoryId.invalid && (itemForm.controls.categoryId.touched || itemForm.controls.categoryId.dirty)) {
+                <small class="catalog-field-error">La categoría es obligatoria.</small>
+              }
 
             </label>
 
             <label class="catalog-field catalog-field-wide">
 
-              <span>Nombre del producto: *</span>
-
-              <input formControlName="name" placeholder="Ejemplo: Bouquet de Rosas"/>
+              <span>Nombre del producto: <b aria-hidden="true">*</b></span>
+              <input formControlName="name" placeholder="Ejemplo: Bouquet de Rosas" required aria-required="true" />
 
               @if (itemForm.controls.name.touched && itemForm.controls.name.invalid) {
 
@@ -699,7 +685,7 @@
 
               <div class="catalog-field catalog-currency-field">
 
-                <span>Moneda: *</span>
+                <span>Moneda: <b aria-hidden="true">*</b></span>
 
                 <div class="catalog-currency-selector">
 
@@ -835,7 +821,7 @@
 
               <label class="catalog-field catalog-base-price-field">
 
-                <span>Precio ({{ selectedCurrency.code }}): *</span>
+                <span>Precio ({{ selectedCurrency.code }}): <b aria-hidden="true">*</b></span>
 
                 <div class="catalog-price-input-wrap catalog-base-price-input-wrap">
 
@@ -848,11 +834,10 @@
                     min="0"
 
                     step="0.01"
-
                     formControlName="price"
-
                     aria-label="Precio base del producto"
-
+                    required
+                    aria-required="true"
                   />
 
                 </div>
@@ -869,30 +854,37 @@
 
             <label class="catalog-field">
 
-              <span>Orden de aparición:</span>
-
-              <input type="number" min="0" step="1" formControlName="sortOrder" />
-
-              @if (itemForm.controls.sortOrder.touched && itemForm.controls.sortOrder.invalid) {
-
-                <small>El orden debe ser igual o mayor a 0.</small>
-
+              <span>Orden de aparición: <b aria-hidden="true">*</b></span>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                formControlName="sortOrder"
+                (input)="onSortOrderInput()"
+                [attr.aria-invalid]="itemForm.controls.sortOrder.touched && itemForm.controls.sortOrder.invalid"
+                aria-describedby="product-sort-order-hint"
+                required
+                aria-required="true"
+              />
+              @if (itemForm.controls.sortOrder.touched && itemForm.controls.sortOrder.hasError('duplicateOrder')) {
+                <small class="catalog-field-error">Este orden ya está asignado a otro producto.</small>
+              } @else if (itemForm.controls.sortOrder.touched && itemForm.controls.sortOrder.hasError('wholeNumber')) {
+                <small class="catalog-field-error">El orden debe ser un número entero.</small>
+              } @else if (itemForm.controls.sortOrder.touched && itemForm.controls.sortOrder.hasError('min')) {
+                <small class="catalog-field-error">El orden debe ser igual o mayor a 0.</small>
+              } @else if (itemForm.controls.sortOrder.touched && itemForm.controls.sortOrder.hasError('required')) {
+                <small class="catalog-field-error">El orden de aparición es obligatorio.</small>
               }
+              <small id="product-sort-order-hint" class="catalog-field-hint">
+                El siguiente orden disponible es {{ nextSortOrder }}.
+              </small>
 
             </label>
 
-            <label class="catalog-availability catalog-status-switch">
-
+            <div class="catalog-availability catalog-status-switch">
               <span class="catalog-status-copy">
-
-                <label class="catalog-field">
-
-              <span>Estado administrativo: *</span>
-
-            </label>
-
+                <span>Estado administrativo: <b aria-hidden="true">*</b></span>
                 <small>{{ itemForm.controls.status.value === 'active' ? 'Activo' : 'Inactivo' }}</small>
-
               </span>
 
               <input
@@ -907,15 +899,11 @@
 
                 role="switch"
 
-                aria-label="Estado administrativo del producto"
+                aria-required="true"
 
               />
-
               <span class="catalog-toggle" aria-hidden="true"></span>
-
-
-
-            </label>
+            </div>
 
           </div>
 
@@ -931,7 +919,7 @@
 
               <h3>
 
-                Imágenes del producto:
+                Imágenes del producto: <b aria-hidden="true">*</b>
 
               </h3>
 
@@ -1049,6 +1037,8 @@
 
                   [disabled]="savingItem"
 
+                  aria-required="true"
+
                 />
 
               </label>
@@ -1062,6 +1052,10 @@
           @if (imageError) {
 
             <p role="alert" class="catalog-inline-error">{{ imageError }}</p>
+
+          } @else if (!hasProductImage) {
+
+            <p class="catalog-inline-error">Agrega al menos una imagen; este campo es obligatorio.</p>
 
           }
 
@@ -1080,36 +1074,17 @@
       <div class="catalog-form-column">
 
         <section class="catalog-form-section">
-
           <label class="catalog-field">
-
-              <span>Descripción: *</span>
-
-            </label>
-
-          <label class="catalog-field">
-
-            <span class="sr-only">Descripción del producto</span>
-
+            <span>Descripción (opcional)</span>
             <textarea
-
               rows="5"
-
               maxlength="500"
-
               formControlName="description"
-
               placeholder="Describe el arreglo floral …"
-
               aria-label="Descripción del producto (máximo 500 caracteres)"
-
             ></textarea>
 
-            @if (itemForm.controls.description.touched && (itemForm.controls.description.hasError('required') || itemForm.controls.description.hasError('pattern'))) {
-
-              <small>La descripción es obligatoria.</small>
-
-            } @else if (itemForm.controls.description.touched && itemForm.controls.description.hasError('maxlength')) {
+            @if (itemForm.controls.description.touched && itemForm.controls.description.hasError('maxlength')) {
 
               <small>La descripción no puede superar los 500 caracteres.</small>
 
@@ -1207,7 +1182,7 @@
 
         class="catalog-save-button"
 
-        [disabled]="itemForm.invalid || savingItem || uploadingImage"
+        [disabled]="itemForm.invalid || !hasProductImage || savingItem || uploadingImage"
 
       >
 

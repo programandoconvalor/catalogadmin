@@ -1,21 +1,9 @@
-export type StoreSocialNetworkId =
-  | 'facebook'
-  | 'instagram'
-  | 'whatsapp'
-  | 'tiktok'
-  | 'youtube'
-  | 'pinterest'
-  | 'x';
+import type { StoreSocialNetwork } from './social-network.model';
 
 export interface StorePhone {
   label: string;
   number: string;
   countryCode?: string;
-}
-
-export interface StoreSocialNetwork {
-  network: StoreSocialNetworkId;
-  url: string;
 }
 
 export interface StoreAddress {
@@ -45,6 +33,7 @@ export interface StoreProfile {
   phones: StorePhone[];
   email: string;
   website: string;
+  /** Campo heredado; la persistencia actual usa tenants/{tenantId}/socials/{networkId}. */
   socials: StoreSocialNetwork[];
   address: StoreAddress;
   primaryColor: string;
@@ -53,21 +42,6 @@ export interface StoreProfile {
   footerCredit: string;
   updatedAt?: unknown;
 }
-
-export const SOCIAL_NETWORKS: Array<{
-  id: StoreSocialNetworkId;
-  label: string;
-  icon: string;
-  color: string;
-}> = [
-  { id: 'facebook', label: 'Facebook', icon: 'f', color: '#1877F2' },
-  { id: 'instagram', label: 'Instagram', icon: '◎', color: '#E4405F' },
-  { id: 'whatsapp', label: 'WhatsApp', icon: '◉', color: '#25D366' },
-  { id: 'tiktok', label: 'TikTok', icon: '♪', color: '#111827' },
-  { id: 'youtube', label: 'YouTube', icon: '▶', color: '#FF0000' },
-  { id: 'pinterest', label: 'Pinterest', icon: 'p', color: '#BD081C' },
-  { id: 'x', label: 'X', icon: '𝕏', color: '#111827' },
-];
 
 export const DEFAULT_STORE_PROFILE: StoreProfile = {
   name: 'Cielito de Flores',

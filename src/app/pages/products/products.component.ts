@@ -19,19 +19,15 @@ import {
 } from '@angular/core';
 
 import {
-
+  AbstractControl,
   FormArray,
-
   FormControl,
-
   FormBuilder,
-
   FormGroup,
-
   ReactiveFormsModule,
-
+  ValidationErrors,
+  ValidatorFn,
   Validators,
-
 } from '@angular/forms';
 
 
@@ -160,6 +156,32 @@ export class ProductsComponent implements OnInit {
 
   private readonly notificationService = inject(NotificationService);
 
+  items: CatalogItem[] = [];
+
+  private lastReportedDuplicateOrder: number | null = null;
+
+  private readonly uniqueSortOrderValidator: ValidatorFn = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    if (control.value === null || control.value === '') {
+      return null;
+    }
+
+    const sortOrder = Number(control.value);
+
+    if (!Number.isInteger(sortOrder)) {
+      return { wholeNumber: true };
+    }
+
+    const duplicate = this.items.some(
+      (item) =>
+        item.id !== this.editingItemId &&
+        item.sortOrder === sortOrder,
+    );
+
+    return duplicate ? { duplicateOrder: { sortOrder } } : null;
+  };
+
 
 
   readonly itemForm = this.formBuilder.group({
@@ -168,17 +190,24 @@ export class ProductsComponent implements OnInit {
 
     name: ['', [Validators.required, Validators.pattern(/\S/)]],
 
-    description: ['', [Validators.maxLength(500)]],
+    description: ['', Validators.maxLength(500)],
 
     price: [0, [Validators.required, Validators.min(0)]],
 
     currency: ['MXN', Validators.required],
 
-    categoryId: [''],
+    categoryId: ['', Validators.required],
 
     status: ['active' as CatalogItemStatus, Validators.required],
 
-    sortOrder: [0, [Validators.required, Validators.min(0)]],
+    sortOrder: [
+      0,
+      [
+        Validators.required,
+        Validators.min(0),
+        this.uniqueSortOrderValidator,
+      ],
+    ],
 
     sku: ['', [Validators.required, Validators.pattern(/\S/)]],
 
@@ -318,8 +347,6 @@ export class ProductsComponent implements OnInit {
 
   pageTitle = 'Productos';
 
-  items: CatalogItem[] = [];
-
   categories: Category[] = [];
 
   deliveryZones: DeliveryZone[] = [];
@@ -410,6 +437,20 @@ export class ProductsComponent implements OnInit {
 
     return this.totalProductImages < 3;
 
+  }
+
+  get hasProductImage(): boolean {
+    return this.totalProductImages > 0;
+  }
+
+  get hasActiveFilters(): boolean {
+    return Boolean(
+      this.searchTerm.trim() ||
+      this.categoryFilter ||
+      this.statusFilter ||
+      this.minPriceFilter ||
+      this.maxPriceFilter,
+    );
   }
 
   private editingCommercialData?: CatalogProductCommercialData;
@@ -514,6 +555,18 @@ export class ProductsComponent implements OnInit {
 
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.filteredItems.length / this.pageSize));
+  }
+
+  get nextSortOrder(): number {
+    return (
+      Math.max(
+        0,
+        this.items.length,
+        ...this.items.map((item) =>
+          Number.isInteger(item.sortOrder) ? item.sortOrder : 0,
+        ),
+      ) + 1
+    );
   }
 
   get paginatedItems(): CatalogItem[] {
@@ -701,6 +754,7 @@ export class ProductsComponent implements OnInit {
     this.clearFeedback();
 
     this.editingItemId = null;
+    this.lastReportedDuplicateOrder = null;
 
     this.editingCommercialData = undefined;
 
@@ -722,7 +776,7 @@ export class ProductsComponent implements OnInit {
 
       status: 'active',
 
-      sortOrder: 0,
+      sortOrder: this.nextSortOrder,
 
       sku: '',
 
@@ -751,6 +805,7 @@ export class ProductsComponent implements OnInit {
   async openEditItem(item: CatalogItem): Promise<void> {
 
     this.clearFeedback();
+    this.lastReportedDuplicateOrder = null;
 
 
 
@@ -820,9 +875,8 @@ export class ProductsComponent implements OnInit {
 
         this.setCommercialControls(currentItem.commercialData);
 
-
-
         this.itemModalOpen = true;
+        this.reportDuplicateOrder();
 
       });
 
@@ -858,9 +912,14 @@ export class ProductsComponent implements OnInit {
 
   async saveItem(): Promise<void> {
 
-    if (this.itemForm.invalid || this.savingItem) {
+    if (this.itemForm.invalid || !this.hasProductImage || this.savingItem) {
 
       this.itemForm.markAllAsTouched();
+      if (!this.hasProductImage) {
+        this.imageError = 'Agrega al menos una imagen del producto.';
+        this.notificationService.error(this.imageError);
+      }
+      this.reportDuplicateOrder();
 
       return;
 
@@ -1464,13 +1523,17 @@ export class ProductsComponent implements OnInit {
 
 
 
-addInclude(): void {
-  if (this.includes.length >= 3) {
-    return;
+  addInclude(): void {
+    if (this.includes.length >= 3) {
+      return;
+    }
+
+    this.includes.push(this.formBuilder.control(''));
   }
 
-  this.includes.push(this.formBuilder.control(''));
-}
+  onSortOrderInput(): void {
+    this.reportDuplicateOrder();
+  }
 
 
 
@@ -2362,6 +2425,25 @@ addInclude(): void {
 
     this.releaseImagePreviews();
 
+  }
+
+  private reportDuplicateOrder(): void {
+    const sortOrderControl = this.itemForm.controls.sortOrder;
+
+    if (!sortOrderControl.hasError('duplicateOrder')) {
+      this.lastReportedDuplicateOrder = null;
+      return;
+    }
+
+    sortOrderControl.markAsTouched();
+    const duplicateOrder = Number(sortOrderControl.value);
+
+    if (this.lastReportedDuplicateOrder !== duplicateOrder) {
+      this.lastReportedDuplicateOrder = duplicateOrder;
+      this.notificationService.error(
+        `El orden ${duplicateOrder} ya está asignado a otro producto.`,
+      );
+    }
   }
 
 

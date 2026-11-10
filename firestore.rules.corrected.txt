@@ -44,6 +44,117 @@ service cloud.firestore {
       return catalogId == 'normal';
     }
 
+    function isSocialNetworkId(network) {
+      return network is string
+        && network in [
+          'facebook',
+          'instagram',
+          'whatsapp',
+          'tiktok',
+          'youtube'
+        ];
+    }
+
+    function isValidSocialUrl(network, url) {
+      return url is string
+        && url.size() <= 2048
+        && (
+          (network == 'facebook'
+            && url.matches('(?i)^https?://([a-z0-9-]+\\.)*facebook\\.com(/.*|[?#].*)?$'))
+          || (network == 'instagram'
+            && url.matches('(?i)^https?://([a-z0-9-]+\\.)*instagram\\.com(/.*|[?#].*)?$'))
+          || (network == 'whatsapp'
+            && (url.matches('(?i)^https?://([a-z0-9-]+\\.)*whatsapp\\.com(/.*|[?#].*)?$')
+              || url.matches('(?i)^https?://wa\\.me(/.*|[?#].*)?$')))
+          || (network == 'tiktok'
+            && url.matches('(?i)^https?://([a-z0-9-]+\\.)*tiktok\\.com(/.*|[?#].*)?$'))
+          || (network == 'youtube'
+            && (url.matches('(?i)^https?://([a-z0-9-]+\\.)*youtube\\.com(/.*|[?#].*)?$')
+              || url.matches('(?i)^https?://youtu\\.be(/.*|[?#].*)?$')))
+        );
+    }
+
+    function isValidSocialRecord(socialId, data) {
+      return isSocialNetworkId(data.network)
+        && (socialId == data.network || socialId == 'socials')
+        && data.keys().hasOnly([
+          'catalogId',
+          'network',
+          'url',
+          'sortOrder',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasAll([
+          'catalogId',
+          'network',
+          'url',
+          'sortOrder',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isNormalCatalog(data.catalogId)
+        && isValidSocialUrl(data.network, data.url)
+        && data.sortOrder is int
+        && data.sortOrder >= 1
+        && data.status in ['active', 'inactive']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function socialDocumentPath(tenantId, socialId) {
+      return /databases/$(database)/documents/tenants/$(tenantId)/socials/$(socialId);
+    }
+
+    function canReadSocialNetwork(tenantId, socialId) {
+      let socialPath = socialDocumentPath(tenantId, socialId);
+      return isActiveMember(tenantId)
+        && (isSocialNetworkId(socialId) || socialId == 'socials')
+        && (!exists(socialPath) || get(socialPath).data.catalogId == 'normal');
+    }
+
+    function socialNetworkIsAvailableAfter(
+      tenantId,
+      socialId,
+      comparedId,
+      network
+    ) {
+      return socialId == comparedId
+        || !existsAfter(socialDocumentPath(tenantId, comparedId))
+        || getAfter(socialDocumentPath(tenantId, comparedId)).data.network != network;
+    }
+
+    function socialNetworkIsUniqueAfter(tenantId, socialId, network) {
+      return socialNetworkIsAvailableAfter(tenantId, socialId, 'facebook', network)
+        && socialNetworkIsAvailableAfter(tenantId, socialId, 'instagram', network)
+        && socialNetworkIsAvailableAfter(tenantId, socialId, 'whatsapp', network)
+        && socialNetworkIsAvailableAfter(tenantId, socialId, 'tiktok', network)
+        && socialNetworkIsAvailableAfter(tenantId, socialId, 'youtube', network)
+        && socialNetworkIsAvailableAfter(tenantId, socialId, 'socials', network);
+    }
+
+    function socialOrderIsAvailableAfter(
+      tenantId,
+      socialId,
+      comparedId,
+      sortOrder
+    ) {
+      return socialId == comparedId
+        || !existsAfter(socialDocumentPath(tenantId, comparedId))
+        || getAfter(socialDocumentPath(tenantId, comparedId)).data.sortOrder != sortOrder;
+    }
+
+    function socialOrderIsUniqueAfter(tenantId, socialId, sortOrder) {
+      return socialOrderIsAvailableAfter(tenantId, socialId, 'facebook', sortOrder)
+        && socialOrderIsAvailableAfter(tenantId, socialId, 'instagram', sortOrder)
+        && socialOrderIsAvailableAfter(tenantId, socialId, 'whatsapp', sortOrder)
+        && socialOrderIsAvailableAfter(tenantId, socialId, 'tiktok', sortOrder)
+        && socialOrderIsAvailableAfter(tenantId, socialId, 'youtube', sortOrder)
+        && socialOrderIsAvailableAfter(tenantId, socialId, 'socials', sortOrder);
+    }
+
     function canManage(tenantId) {
       return hasRole(tenantId, 'owner')
         || hasRole(tenantId, 'admin');
@@ -104,6 +215,43 @@ service cloud.firestore {
           && request.resource.data.catalogId == 'normal';
         allow delete: if canEdit(tenantId)
           && resource.data.catalogId == 'normal';
+      }
+
+      match /socials/{socialId} {
+        allow get: if canReadSocialNetwork(tenantId, socialId);
+        allow list: if isActiveMember(tenantId)
+          && resource.data.catalogId == 'normal';
+        allow create: if canEdit(tenantId)
+          && isValidSocialRecord(socialId, request.resource.data)
+          && socialId == request.resource.data.network
+          && socialNetworkIsUniqueAfter(
+            tenantId,
+            socialId,
+            request.resource.data.network
+          )
+          && socialOrderIsUniqueAfter(
+            tenantId,
+            socialId,
+            request.resource.data.sortOrder
+          )
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if canEdit(tenantId)
+          && isValidSocialRecord(socialId, request.resource.data)
+          && socialNetworkIsUniqueAfter(
+            tenantId,
+            socialId,
+            request.resource.data.network
+          )
+          && socialOrderIsUniqueAfter(
+            tenantId,
+            socialId,
+            request.resource.data.sortOrder
+          )
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if canEdit(tenantId)
+          && isValidSocialRecord(socialId, resource.data);
       }
 
       match /deliveryZones/{zoneId} {

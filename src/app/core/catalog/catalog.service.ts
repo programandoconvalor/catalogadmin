@@ -110,6 +110,15 @@ export class CatalogService {
       updatedAt: serverTimestamp(),
     };
 
+    if (item.commercialData) {
+      delete updates['commercialData'];
+      for (const [field, value] of Object.entries(item.commercialData)) {
+        if (value !== undefined) {
+          updates[`commercialData.${field}`] = value;
+        }
+      }
+    }
+
     if (
       Object.hasOwn(item, 'categoryId') &&
       item.categoryId === undefined

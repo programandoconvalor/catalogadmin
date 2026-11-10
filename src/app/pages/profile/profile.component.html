@@ -107,25 +107,15 @@
 
       @if (activeTab === 'redes') {
         <section class="panel">
-          <header class="panel-heading"><div><h2>Redes sociales</h2><p>Agrega hasta 5 redes sociales oficiales de tu florería.</p></div></header>
-          @for (social of profile.socials; track $index; let i = $index) {
-            <div class="social-row">
-              <span class="social-brand" [style.background]="socialMeta(social.network).color">{{ socialMeta(social.network).icon }}</span>
-              <select [(ngModel)]="social.network" [name]="'social-network-' + i" aria-label="Red social">
-                @for (network of socialNetworks; track network.id) { <option [value]="network.id">{{ network.label }}</option> }
-              </select>
-              <input [(ngModel)]="social.url" [name]="'social-url-' + i" type="url" [placeholder]="'URL de ' + socialMeta(social.network).label" />
-              <button type="button" class="icon-danger" (click)="removeSocial(i)" aria-label="Eliminar red social">×</button>
+          <header class="panel-heading">
+            <div>
+              <h2>Redes sociales</h2>
+              <p>Administra los enlaces, el orden y el estado de publicación de tus redes.</p>
             </div>
-          }
-          <button type="button" class="outline-button" (click)="addSocial()" [disabled]="profile.socials.length >= maxSocialNetworks || socialOptionsAvailable.length === 0">＋ Agregar red social</button>
-          <p class="field-hint">Puedes agregar hasta 5 redes sociales. Usa la URL completa del perfil o enlace de WhatsApp.</p>
-        
-        
-        <div class="bottom-actions"><span>Los cambios se mostrarán en el catálogo.</span><button class="catalog-primary-action" type="button" (click)="saveProfile(activeTab)" [disabled]="saving">{{ saving ? 'Guardando...' : 'Guardar redes sociales' }}</button></div>
-    
+          </header>
+          <p class="field-hint">Los cambios de redes sociales se administran desde su módulo para conservar el orden y el estado de cada enlace.</p>
+          <a class="catalog-primary-action" routerLink="/catalog/social-networks">Administrar redes sociales</a>
         </section>
-        
       }
 
       @if (activeTab === 'address') {
@@ -198,7 +188,7 @@
             @if (profile.email) { <p><span>✉</span>{{ profile.email }}</p> }
             @if (profile.website) { <p><span>◎</span>{{ profile.website }}</p> }
           </div>
-          @if (profile.socials.length) { <div class="mini-socials">@for (social of profile.socials; track $index) { <span [style.background]="socialMeta(social.network).color">{{ socialMeta(social.network).icon }}</span> }</div> }
+          @if (activeSocials.length) { <div class="mini-socials">@for (social of activeSocials; track social.network) { <span [style.background]="socialMeta(social.network).color">{{ socialMeta(social.network).icon }}</span> }</div> }
           @if (fullAddress || profile.address.mapUrl) {
             <div class="mini-address"><span>⌖</span><div><strong>{{ profile.address.country || 'Ubicación' }}</strong><p>{{ addressPreview }}</p></div></div>
             <div class="mini-map-art"><span class="map-grid-line"></span><span class="mini-map-pin">●</span><button type="button" (click)="openMap()" [disabled]="!mapPreviewUrl">Ver en Google Maps ↗</button></div>

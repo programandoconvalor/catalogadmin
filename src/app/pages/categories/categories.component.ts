@@ -6,7 +6,14 @@ import {
   OnInit,
   inject,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
 import { CategoryService } from '../../core/catalog/category.service';
 import type {
   Category,
@@ -42,6 +49,7 @@ export class CategoriesComponent implements OnInit {
   loading = false;
   refreshing = false;
   saving = false;
+  savePending = false;
   deleting = false;
   errorMessage: string | null = null;
 
@@ -51,12 +59,6 @@ export class CategoriesComponent implements OnInit {
   sortBy: CategorySortBy = 'order';
   sortDirection: SortDirection = 'asc';
 
-  // Valores que realmente se aplican al pulsar Filtrar.
-  private appliedSearchTerm = '';
-  private appliedStatusFilter: CategoryStatus | '' = '';
-  private appliedSortBy: CategorySortBy = 'order';
-  private appliedSortDirection: SortDirection = 'asc';
-
   currentPage = 1;
   pageSize = 8;
 
@@ -65,9 +67,29 @@ export class CategoriesComponent implements OnInit {
   pendingDeletion: Category | null = null;
 
   private loadPromise: Promise<void> | null = null;
+  private savePendingTimer: ReturnType<typeof setTimeout> | null = null;
   private filteredCache: Category[] = [];
   private filteredCacheKey = '';
   private filteredCacheSource: Category[] | null = null;
+  private readonly savePendingWarningDelayMs = 15_000;
+  private lastReportedDuplicateOrder: number | null = null;
+  private readonly uniqueSortOrderValidator: ValidatorFn = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const sortOrder = Number(control.value);
+
+    if (!Number.isInteger(sortOrder)) {
+      return { wholeNumber: true };
+    }
+
+    const duplicate = this.categories.some(
+      (category) =>
+        category.id !== this.editingCategoryId &&
+        category.sortOrder === sortOrder,
+    );
+
+    return duplicate ? { duplicateOrder: { sortOrder } } : null;
+  };
 
   readonly categoryForm = this.formBuilder.group({
     name: [
@@ -79,7 +101,14 @@ export class CategoriesComponent implements OnInit {
       ],
     ],
     status: ['active' as CategoryStatus, Validators.required],
-    sortOrder: [0, [Validators.required, Validators.min(0)]],
+    sortOrder: [
+      0,
+      [
+        Validators.required,
+        Validators.min(1),
+        this.uniqueSortOrderValidator,
+      ],
+    ],
   });
 
   ngOnInit(): void {
@@ -88,10 +117,10 @@ export class CategoriesComponent implements OnInit {
 
   get filteredCategories(): Category[] {
     const cacheKey = [
-      this.appliedSearchTerm,
-      this.appliedStatusFilter,
-      this.appliedSortBy,
-      this.appliedSortDirection,
+      this.searchTerm,
+      this.statusFilter,
+      this.sortBy,
+      this.sortDirection,
     ].join('::');
 
     if (
@@ -101,27 +130,26 @@ export class CategoriesComponent implements OnInit {
       return this.filteredCache;
     }
 
-    const search = this.appliedSearchTerm.trim().toLocaleLowerCase('es');
+    const search = this.searchTerm.trim().toLocaleLowerCase('es');
 
     this.filteredCache = this.categories
       .filter((category) => {
         const name = category.name?.toLocaleLowerCase('es') ?? '';
         const matchesSearch = !search || name.includes(search);
         const matchesStatus =
-          !this.appliedStatusFilter ||
-          category.status === this.appliedStatusFilter;
+          !this.statusFilter || category.status === this.statusFilter;
 
         return matchesSearch && matchesStatus;
       })
       .sort((a, b) => {
         const comparison =
-          this.appliedSortBy === 'name'
+          this.sortBy === 'name'
             ? (a.name ?? '').localeCompare(b.name ?? '', 'es', {
                 sensitivity: 'base',
               })
             : (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
 
-        return comparison * (this.appliedSortDirection === 'asc' ? 1 : -1);
+        return comparison * (this.sortDirection === 'asc' ? 1 : -1);
       });
 
     this.filteredCacheKey = cacheKey;
@@ -157,10 +185,10 @@ export class CategoriesComponent implements OnInit {
 
   get hasActiveFilters(): boolean {
     return Boolean(
-      this.appliedSearchTerm ||
-      this.appliedStatusFilter ||
-      this.appliedSortBy !== 'order' ||
-      this.appliedSortDirection !== 'asc',
+      this.searchTerm.trim() ||
+      this.statusFilter ||
+      this.sortBy !== 'order' ||
+      this.sortDirection !== 'asc',
     );
   }
 
@@ -206,54 +234,29 @@ export class CategoriesComponent implements OnInit {
     return this.loadPromise;
   }
 
-  /**
-   * Aplica todos los valores del formulario de filtros.
-   */
-  applyFilters(): void {
-    this.appliedSearchTerm = this.searchTerm.trim();
-    this.appliedStatusFilter = this.statusFilter;
-    this.appliedSortBy = this.sortBy;
-    this.appliedSortDirection = this.sortDirection;
-
-    this.currentPage = 1;
-    this.invalidateFilteredCache();
-  }
-
   onSearchChange(value: string): void {
     this.searchTerm = value;
+    this.resetFiltersAndPage();
   }
 
   onStatusFilterChange(value: string): void {
-    this.statusFilter = value as CategoryStatus | '';
+    if (value !== '' && value !== 'active' && value !== 'inactive') return;
+
+    this.statusFilter = value;
+    this.resetFiltersAndPage();
   }
 
   onSortChange(value: string): void {
     if (value === 'name' || value === 'order') {
       this.sortBy = value;
+      this.resetFiltersAndPage();
     }
   }
 
   toggleSortDirection(): void {
     this.sortDirection =
       this.sortDirection === 'asc' ? 'desc' : 'asc';
-  }
-
-  /**
-   * Restablece tanto los controles como los filtros aplicados.
-   */
-  clearFilters(): void {
-    this.searchTerm = '';
-    this.statusFilter = '';
-    this.sortBy = 'order';
-    this.sortDirection = 'asc';
-
-    this.appliedSearchTerm = '';
-    this.appliedStatusFilter = '';
-    this.appliedSortBy = 'order';
-    this.appliedSortDirection = 'asc';
-
-    this.currentPage = 1;
-    this.invalidateFilteredCache();
+    this.resetFiltersAndPage();
   }
 
   onPageSizeChange(value: string): void {
@@ -270,27 +273,56 @@ export class CategoriesComponent implements OnInit {
   }
 
   openCreateCategory(): void {
+    if (this.saving || this.savePending) return;
+
     this.editingCategoryId = null;
+    this.lastReportedDuplicateOrder = null;
     this.categoryForm.reset({
       name: '',
       status: 'active',
-      sortOrder: this.categories.length,
+      sortOrder: this.nextSortOrder,
     });
     this.modalOpen = true;
   }
 
+  get nextSortOrder(): number {
+    return (
+      Math.max(
+        0,
+        ...this.categories.map((category) =>
+          Number.isInteger(category.sortOrder) ? category.sortOrder : 0,
+        ),
+      ) + 1
+    );
+  }
+
+  toggleCategoryStatus(): void {
+    const statusControl = this.categoryForm.controls.status;
+    statusControl.setValue(
+      statusControl.value === 'active' ? 'inactive' : 'active',
+    );
+  }
+
   openEditCategory(category: Category): void {
+    if (this.saving || this.savePending) return;
+
     this.editingCategoryId = category.id;
+    this.lastReportedDuplicateOrder = null;
     this.categoryForm.reset({
       name: category.name,
       status: category.status,
       sortOrder: category.sortOrder,
     });
     this.modalOpen = true;
+    this.reportDuplicateOrder();
+  }
+
+  onSortOrderInput(): void {
+    this.reportDuplicateOrder();
   }
 
   closeModal(): void {
-    if (this.saving) return;
+    if (this.saving && !this.savePending) return;
 
     this.modalOpen = false;
     this.categoryForm.reset({
@@ -301,8 +333,29 @@ export class CategoriesComponent implements OnInit {
   }
 
   async saveCategory(): Promise<void> {
-    if (this.categoryForm.invalid || this.saving) {
+    if (this.saving || this.savePending) {
+      return;
+    }
+
+    this.categoryForm.controls.sortOrder.updateValueAndValidity({
+      emitEvent: false,
+    });
+
+    if (this.categoryForm.invalid) {
       this.categoryForm.markAllAsTouched();
+
+      const sortOrderControl = this.categoryForm.controls.sortOrder;
+      if (sortOrderControl.hasError('duplicateOrder')) {
+        this.reportDuplicateOrder();
+      } else if (
+        sortOrderControl.hasError('wholeNumber') ||
+        sortOrderControl.hasError('min')
+      ) {
+        this.notificationService.error(
+          'El orden debe ser un número entero mayor o igual a 1.',
+        );
+      }
+
       return;
     }
 
@@ -316,6 +369,16 @@ export class CategoriesComponent implements OnInit {
     };
 
     this.saving = true;
+    this.savePending = false;
+    this.savePendingTimer = setTimeout(() => {
+      this.runInAngular(() => {
+        this.saving = false;
+        this.savePending = true;
+        this.notificationService.warning(
+          'El guardado sigue esperando respuesta de Firebase. No vuelvas a enviarlo; puedes cerrar esta ventana mientras termina.',
+        );
+      });
+    }, this.savePendingWarningDelayMs);
 
     try {
       if (this.editingCategoryId) {
@@ -364,8 +427,14 @@ export class CategoriesComponent implements OnInit {
         );
       });
     } finally {
+      if (this.savePendingTimer !== null) {
+        clearTimeout(this.savePendingTimer);
+        this.savePendingTimer = null;
+      }
+
       this.runInAngular(() => {
         this.saving = false;
+        this.savePending = false;
       });
     }
   }
@@ -431,6 +500,30 @@ export class CategoriesComponent implements OnInit {
     this.filteredCacheKey = '';
     this.filteredCacheSource = null;
     this.filteredCache = [];
+  }
+
+  private resetFiltersAndPage(): void {
+    this.currentPage = 1;
+    this.invalidateFilteredCache();
+  }
+
+  private reportDuplicateOrder(): void {
+    const sortOrderControl = this.categoryForm.controls.sortOrder;
+
+    if (!sortOrderControl.hasError('duplicateOrder')) {
+      this.lastReportedDuplicateOrder = null;
+      return;
+    }
+
+    sortOrderControl.markAsTouched();
+    const duplicateOrder = Number(sortOrderControl.value);
+
+    if (this.lastReportedDuplicateOrder !== duplicateOrder) {
+      this.lastReportedDuplicateOrder = duplicateOrder;
+      this.notificationService.error(
+        `El orden ${duplicateOrder} ya está asignado a otra categoría.`,
+      );
+    }
   }
 
   private getErrorMessage(error: unknown, fallback: string): string {

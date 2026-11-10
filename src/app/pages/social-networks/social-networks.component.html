@@ -1,0 +1,420 @@
+<div class="social-page">
+  @if (errorMessage) {
+    <div role="alert" class="social-error">
+      <span>{{ errorMessage }}</span>
+      <button type="button" (click)="loadNetworks()">Reintentar</button>
+    </div>
+  }
+
+  <section class="social-card">
+    <header class="social-page-header">
+      <div class="social-heading">
+        <span class="social-heading-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <path d="m8.7 10.7 6.6-4.4m-6.6 7 6.6 4.4" />
+          </svg>
+        </span>
+        <div>
+          <h2>Redes Sociales</h2>
+          <p>Administra los enlaces de tus redes sociales.</p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="social-primary-button"
+        (click)="openCreateNetwork()"
+        [disabled]="!canCreateNetwork || loading || !!errorMessage"
+        [title]="canCreateNetwork ? 'Nueva red social' : 'Ya configuraste el máximo de 5 redes sociales'"
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M10 4v12m6-6H4" />
+        </svg>
+        Nueva red social
+      </button>
+    </header>
+
+    <section class="social-toolbar" role="search" aria-label="Filtros de redes sociales">
+      <label class="social-search-field">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-4-4" />
+        </svg>
+        <input
+          type="search"
+          [value]="searchTerm"
+          (input)="onSearchChange($any($event.target).value)"
+          placeholder="Buscar red social o enlace..."
+          aria-label="Buscar red social o enlace"
+        />
+      </label>
+
+      <select
+        class="social-toolbar-select"
+        aria-label="Filtrar por estado"
+        [value]="statusFilter"
+        (change)="onStatusFilterChange($any($event.target).value)"
+      >
+        <option value="">Todos los estados</option>
+        <option value="active">Activas</option>
+        <option value="inactive">Inactivas</option>
+      </select>
+
+      <select
+        class="social-toolbar-select"
+        aria-label="Ordenar redes sociales"
+        [value]="sortBy"
+        (change)="onSortChange($any($event.target).value)"
+      >
+        <option value="order">Orden personalizado</option>
+        <option value="name">Nombre</option>
+      </select>
+
+      <button
+        type="button"
+        class="social-sort-direction"
+        (click)="toggleSortDirection()"
+        [attr.aria-label]="sortDirection === 'asc' ? 'Cambiar a orden descendente' : 'Cambiar a orden ascendente'"
+        [title]="sortDirection === 'asc' ? 'Ascendente' : 'Descendente'"
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true" [class.is-desc]="sortDirection === 'desc'">
+          <path d="M10 3v14m0 0 5-5m-5 5-5-5" />
+        </svg>
+      </button>
+    </section>
+
+    @if (loading && networks.length === 0) {
+      <div class="social-state" role="status" aria-live="polite">
+        <span class="social-spinner"></span>
+        <p>Cargando redes sociales...</p>
+      </div>
+    } @else if (!errorMessage && filteredNetworks.length === 0) {
+      <div class="social-state">
+        <span class="social-empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <path d="m8.7 10.7 6.6-4.4m-6.6 7 6.6 4.4" />
+          </svg>
+        </span>
+        <h3>{{ hasActiveFilters ? 'No encontramos redes sociales' : 'Todavía no hay redes sociales' }}</h3>
+        <p>
+          {{ hasActiveFilters
+            ? 'No hay resultados con esta búsqueda. Prueba con otro nombre o enlace.'
+            : 'Agrega hasta cinco enlaces para que tus clientes encuentren tus redes.' }}
+        </p>
+        @if (!hasActiveFilters && canCreateNetwork) {
+          <button type="button" class="social-primary-button" (click)="openCreateNetwork()">
+            Agregar primera red social
+          </button>
+        }
+      </div>
+    } @else if (!errorMessage) {
+      <div class="social-table-wrap">
+        <table class="social-table">
+          <thead>
+            <tr>
+              <th>Red social</th>
+              <th>Enlace</th>
+              <th>Orden</th>
+              <th>Estado</th>
+              <th class="social-actions-heading">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (network of paginatedNetworks; track network.id) {
+              <tr>
+                <td>
+                  <div class="social-name-cell">
+                    <span
+                      class="social-brand"
+                      [class.social-brand-instagram]="network.network === 'instagram'"
+                      [class.social-brand-tiktok]="network.network === 'tiktok'"
+                      [style.backgroundColor]="networkMeta(network.network).color"
+                      [attr.aria-label]="networkLabel(network.network)"
+                    >
+                      {{ networkMeta(network.network).icon }}
+                    </span>
+                    <span class="social-name-copy">
+                      <strong>{{ networkLabel(network.network) }}</strong>
+                      <small>{{ networkDescription(network.network) }}</small>
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <a
+                    class="social-profile-link"
+                    [href]="network.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    [attr.aria-label]="'Abrir enlace de ' + networkLabel(network.network) + ' en una pestaña nueva'"
+                  >
+                    <span>{{ network.url }}</span>
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                      <path d="M11 3h6v6m-1-5-8 8" />
+                      <path d="M15 11v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" />
+                    </svg>
+                  </a>
+                </td>
+                <td><span class="social-order">{{ network.sortOrder }}</span></td>
+                <td>
+                  <span
+                    class="social-status"
+                    [class.is-active]="network.status === 'active'"
+                    [class.is-inactive]="network.status === 'inactive'"
+                  >
+                    <span></span>
+                    {{ network.status === 'active' ? 'Activa' : 'Inactiva' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="social-actions">
+                    <button
+                      type="button"
+                      class="social-row-action edit"
+                      (click)="openEditNetwork(network)"
+                      [attr.aria-label]="'Editar ' + networkLabel(network.network)"
+                      [disabled]="!canEditNetwork(network)"
+                      title="Editar"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path d="m12.8 3.5 3.7 3.7M4 16l3.3-.7L16 6.6a1.8 1.8 0 0 0-2.6-2.6l-9 8.7L4 16Z" />
+                      </svg>
+                      <span>Editar</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="social-row-action delete"
+                      (click)="requestDeletion(network)"
+                      [attr.aria-label]="'Eliminar ' + networkLabel(network.network)"
+                      title="Eliminar"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path d="M3.5 5.5h13M8 5.5V3.8h4v1.7m-6.5 0 .8 10.7h7.4l.8-10.7M8.2 8.5v5m3.6-5v5" />
+                      </svg>
+                      <span>Eliminar</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (!errorMessage) {
+      <footer class="social-list-footer">
+        <p>
+          Mostrando <strong>{{ firstVisibleItem }}–{{ lastVisibleItem }}</strong> de
+          <strong>{{ filteredNetworks.length }}</strong> redes sociales
+        </p>
+        <div class="social-pagination-controls">
+          <span>{{ networks.length }} configurada{{ networks.length === 1 ? '' : 's' }}</span>
+          @if (filteredNetworks.length > 0) {
+            <label class="social-page-size-label">
+              Por página
+              <select
+                class="social-page-size"
+                aria-label="Redes sociales por página"
+                [value]="pageSize"
+                (change)="onPageSizeChange($any($event.target).value)"
+              >
+                @for (size of pageSizeOptions; track size) {
+                  <option [value]="size">{{ size }}</option>
+                }
+              </select>
+            </label>
+
+            <button
+              type="button"
+              class="social-page-button"
+              (click)="goToPage(currentPage - 1)"
+              [disabled]="currentPage === 1"
+            >
+              Anterior
+            </button>
+
+            <span class="social-page-indicator">
+              Página {{ currentPage }} de {{ totalPages }}
+            </span>
+
+            <button
+              type="button"
+              class="social-page-button"
+              (click)="goToPage(currentPage + 1)"
+              [disabled]="currentPage >= totalPages"
+            >
+              Siguiente
+            </button>
+          }
+        </div>
+      </footer>
+    }
+  </section>
+</div>
+
+<app-modal
+  [isOpen]="modalOpen"
+  [showCloseButton]="!saving"
+  position="center"
+  backdropClassName="bg-gray-950/55 backdrop-blur-[2px]"
+  className="social-dialog max-w-[560px] p-0"
+  (close)="closeModal()"
+>
+  <form [formGroup]="socialForm" (ngSubmit)="saveNetwork()" class="social-form">
+    <header class="social-form-header">
+      <span
+        class="social-brand social-form-brand"
+        [class.social-brand-instagram]="socialForm.controls.network.value === 'instagram'"
+        [class.social-brand-tiktok]="socialForm.controls.network.value === 'tiktok'"
+        [style.backgroundColor]="networkMeta(socialForm.controls.network.value).color"
+        aria-hidden="true"
+      >
+        {{ networkMeta(socialForm.controls.network.value).icon }}
+      </span>
+      <div>
+        <span class="social-eyebrow">CATÁLOGO</span>
+        <h2>{{ editingNetworkId ? 'Editar red social' : 'Agregar red social' }}</h2>
+        <p>
+          {{ editingNetworkId
+            ? 'Actualiza el enlace y su presentación en el catálogo.'
+            : 'Registra un nuevo enlace a tus redes sociales.' }}
+        </p>
+      </div>
+    </header>
+
+    <div class="social-form-fields">
+      <label class="social-input-group">
+        <span>Red social <b>*</b></span>
+        <select formControlName="network" (change)="onNetworkChange()">
+          @for (network of availableNetworkOptions; track network.id) {
+            <option [value]="network.id">
+              {{ network.label }}
+            </option>
+          }
+        </select>
+        @if (socialForm.controls.network.touched && socialForm.controls.network.hasError('duplicateNetwork')) {
+          <em>Esta red social ya está configurada.</em>
+        }
+      </label>
+
+      <label class="social-input-group">
+        <span>URL del perfil <b>*</b></span>
+        <input
+          type="url"
+          formControlName="url"
+          autocomplete="url"
+          [placeholder]="exampleUrl(socialForm.controls.network.value)"
+          [attr.aria-invalid]="socialForm.controls.url.touched && socialForm.controls.url.invalid"
+        />
+        @if (socialForm.controls.url.touched && socialForm.controls.url.hasError('required')) {
+          <em>La URL del perfil es obligatoria.</em>
+        } @else if (socialForm.controls.url.touched && socialForm.controls.url.hasError('profileUrl')) {
+          <em>{{ socialForm.controls.url.getError('profileUrl').message }}</em>
+        } @else {
+          <small>Ingresa la URL completa de tu perfil (ej. {{ exampleUrl(socialForm.controls.network.value) }}).</small>
+        }
+      </label>
+
+      <label class="social-input-group">
+        <span>Orden de visualización <b>*</b></span>
+        <input type="number" min="1" step="1" formControlName="sortOrder" />
+        @if (socialForm.controls.sortOrder.touched && socialForm.controls.sortOrder.hasError('duplicateOrder')) {
+          <em>Este orden ya está asignado a otra red social.</em>
+        } @else if (socialForm.controls.sortOrder.touched && (socialForm.controls.sortOrder.hasError('min') || socialForm.controls.sortOrder.hasError('wholeNumber'))) {
+          <em>El orden debe ser un número entero mayor o igual a 1.</em>
+        }
+      </label>
+
+      <div class="social-input-group social-status-field">
+        <div class="social-status-copy">
+          <span>Estado administrativo <b>*</b></span>
+          <strong>
+            {{ socialForm.controls.status.value === 'active' ? 'Activo' : 'Inactivo' }}
+          </strong>
+        </div>
+        <label
+          class="social-switch"
+          [attr.aria-label]="'Estado administrativo: ' + (socialForm.controls.status.value === 'active' ? 'Activo' : 'Inactivo')"
+        >
+          <input
+            class="social-switch-input"
+            type="checkbox"
+            role="switch"
+            [checked]="socialForm.controls.status.value === 'active'"
+            (change)="toggleNetworkStatus()"
+          />
+          <span class="social-switch-track" aria-hidden="true"></span>
+        </label>
+        <small>Las redes sociales inactivas no estarán disponibles en tu catálogo público.</small>
+      </div>
+    </div>
+
+    <footer class="social-form-footer">
+      <button type="button" class="social-cancel-button" (click)="closeModal()" [disabled]="saving">
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        class="social-save-button"
+        [disabled]="socialForm.invalid || saving"
+      >
+        @if (saving) {
+          <span class="social-button-spinner" aria-hidden="true"></span>
+          Guardando...
+        } @else {
+          {{ editingNetworkId ? 'Guardar cambios' : 'Agregar red social' }}
+        }
+      </button>
+    </footer>
+  </form>
+</app-modal>
+
+<app-modal
+  [isOpen]="pendingDeletion !== null"
+  [showCloseButton]="!deleting"
+  position="center"
+  backdropClassName="bg-gray-950/55 backdrop-blur-[2px]"
+  className="social-dialog max-w-[500px] p-0"
+  (close)="pendingDeletion = null"
+>
+  <section class="social-form">
+    <header class="social-form-header">
+      <span class="social-delete-icon" aria-hidden="true">!</span>
+      <div>
+        <span class="social-eyebrow">CONFIRMACIÓN</span>
+        <h2>Eliminar red social</h2>
+        <p>Esta acción quitará el enlace del perfil de tu florería.</p>
+      </div>
+    </header>
+    <div class="social-form-fields">
+      <div class="social-delete-warning">
+        ¿Estás seguro de eliminar
+        <strong>{{ pendingDeletion ? networkLabel(pendingDeletion.network) : '' }}</strong>?
+      </div>
+    </div>
+    <footer class="social-form-footer">
+      <button
+        type="button"
+        class="social-cancel-button"
+        (click)="pendingDeletion = null"
+        [disabled]="deleting"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="social-delete-button"
+        (click)="confirmDeletion()"
+        [disabled]="deleting"
+      >
+        {{ deleting ? 'Eliminando...' : 'Sí, eliminar' }}
+      </button>
+    </footer>
+  </section>
+</app-modal>

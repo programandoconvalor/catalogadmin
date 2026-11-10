@@ -58,7 +58,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     },
     {
       name: 'Redes Sociales',
-      path: '/profile',
+      path: '/catalog/social-networks',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4m-6.6 7 6.6 4.4"/></svg>`,
     },
     {
@@ -198,6 +198,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       '/profile': 'Logo y Nombre',
       '/catalog/products': 'Productos',
       '/catalog/categories': 'Categorías',
+      '/catalog/social-networks': 'Redes Sociales',
     };
 
     this.activeMenuItem = routeMenuMap[cleanUrl] ?? null;

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject,ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import {
   doc,
   getDoc,
@@ -19,16 +20,20 @@ import { db, storage } from '../../core/firebase/firebase';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { NotificationService } from '../../core/notifications/notification.service';
 import {
-  StoreProfile,
-  StoreSocialNetwork,
-  DEFAULT_STORE_PROFILE,
+  ManagedStoreSocialNetwork,
   SOCIAL_NETWORKS,
+  SOCIAL_NETWORK_CATALOG_ID,
+} from '../../core/models/social-network.model';
+import {
+  StoreProfile,
+  DEFAULT_STORE_PROFILE,
 } from '../../core/models/store-profile.model';
+import { SocialNetworkService } from '../../core/social-networks/social-network.service';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })
@@ -36,8 +41,10 @@ export class ProfileComponent implements OnInit {
   private readonly tenantContext = inject(TenantContextService);
   private readonly notifications = inject(NotificationService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly socialNetworkService = inject(SocialNetworkService);
 
   profile: StoreProfile = this.createEmptyProfile();
+  managedSocialNetworks: ManagedStoreSocialNetwork[] = [];
   readonly socialNetworks = SOCIAL_NETWORKS;
   readonly tabs = [
     { id: 'general', label: 'Información general', icon: '' },
@@ -119,9 +126,10 @@ export class ProfileComponent implements OnInit {
     return '';
   }
 
-  get socialOptionsAvailable(): typeof SOCIAL_NETWORKS {
-    const selected = new Set(this.profile.socials.map((item) => item.network));
-    return SOCIAL_NETWORKS.filter((network) => !selected.has(network.id));
+  get activeSocials(): ManagedStoreSocialNetwork[] {
+    return this.managedSocialNetworks
+      .filter((social) => social.status !== 'inactive')
+      .sort((first, second) => first.sortOrder - second.sortOrder);
   }
 
   async loadProfile(): Promise<void> {
@@ -238,6 +246,31 @@ export class ProfileComponent implements OnInit {
     this.primaryPhoneCountryCode =
       this.primaryPhoneNormalCountryCode;
 
+    try {
+      this.managedSocialNetworks =
+        await this.socialNetworkService.getActiveSocialNetworks(
+          SOCIAL_NETWORK_CATALOG_ID,
+        );
+    } catch (error: unknown) {
+      console.error('[Profile] Error al consultar redes sociales:', error);
+      this.managedSocialNetworks = this.profile.socials
+        .slice(0, this.maxSocialNetworks)
+        .map((social, index) => ({
+          ...social,
+          id: social.network,
+          catalogId: SOCIAL_NETWORK_CATALOG_ID,
+          sortOrder:
+            Number.isSafeInteger(social.sortOrder) && Number(social.sortOrder) > 0
+              ? Number(social.sortOrder)
+              : index + 1,
+          status: social.status === 'inactive' ? 'inactive' : 'active',
+        }));
+      this.notifications.warning(
+        'No fue posible consultar las redes sociales guardadas como documentos. Se muestran temporalmente los datos heredados.',
+        'Vista previa de redes sociales',
+      );
+    }
+
     this.persistedProfile = JSON.parse(
       JSON.stringify(this.profile),
     ) as StoreProfile;
@@ -275,8 +308,7 @@ export class ProfileComponent implements OnInit {
       const tenantId = this.requireTenantId();
       const sectionKeys: Record<string, (keyof StoreProfile)[]> = {
         general: ['name', 'tagline', 'description', 'logoUrl'],
-        redes: [ 'socials'],
-        contact: ['primaryPhone', 'primaryPhoneCountryCode', 'primaryPhoneNormal', 'primaryPhoneNormalCountryCode', 'email', 'website', 'socials'],
+        contact: ['primaryPhone', 'primaryPhoneCountryCode', 'primaryPhoneNormal', 'primaryPhoneNormalCountryCode', 'email', 'website'],
         address: ['address'],
         appearance: ['primaryColor', 'payments'],
         preview: [],
@@ -295,23 +327,10 @@ export class ProfileComponent implements OnInit {
         if (!this.profile.name) throw new Error('El nombre de la florería es obligatorio.');
       }
 
-      if (section === 'redes') {
-       
-        this.profile.socials = this.profile.socials
-          .map((social) => ({ ...social, url: social.url.trim() }))
-          .filter((social) => social.url)
-          .slice(0, this.maxSocialNetworks);
-      
-      }
-
       if (section === 'contact') {
         this.profile.primaryPhoneNormal = (this.profile.primaryPhoneNormal || '').trim();
         this.profile.email = (this.profile.email || '').trim();
         this.profile.website = (this.profile.website || '').trim();
-        this.profile.socials = this.profile.socials
-          .map((social) => ({ ...social, url: social.url.trim() }))
-          .filter((social) => social.url)
-          .slice(0, this.maxSocialNetworks);
         if (!this.profile.primaryPhoneNormal) throw new Error('El teléfono principal del catálogo es obligatorio.');
         // Mantener los campos históricos sincronizados con el catálogo actual.
         this.profile.primaryPhone = this.profile.primaryPhoneNormal;
@@ -413,17 +432,6 @@ export class ProfileComponent implements OnInit {
     this.coverFile = file;
     this.profile.coverUrl = URL.createObjectURL(file);
     this.errorMessage = '';
-  }
-
-  addSocial(): void {
-    if (this.profile.socials.length >= this.maxSocialNetworks) return;
-    const next = this.socialOptionsAvailable[0];
-    if (!next) return;
-    this.profile.socials.push({ network: next.id, url: '' });
-  }
-
-  removeSocial(index: number): void {
-    this.profile.socials.splice(index, 1);
   }
 
   socialMeta(networkId: string) {

@@ -26,6 +26,7 @@ import { ProductsComponent } from './pages/products/products.component';
 
 // NUEVO: Categorías
 import { CategoriesComponent } from './pages/categories/categories.component';
+import { SocialNetworksComponent } from './pages/social-networks/social-networks.component';
 
 import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
@@ -56,6 +57,11 @@ export const routes: Routes = [
         path: 'catalog/categories',
         component: CategoriesComponent,
         title: 'Categorías',
+      },
+      {
+        path: 'catalog/social-networks',
+        component: SocialNetworksComponent,
+        title: 'Redes Sociales',
       },
 
       // =====================================================
