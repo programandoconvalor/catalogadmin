@@ -443,7 +443,11 @@
       <div class="delivery-status-field">
         <div>
           <span>Estado de la zona</span>
-          <strong>
+          <strong
+            class="delivery-status-label"
+            [class.is-active]="zoneForm.controls.isActive.value"
+            [class.is-inactive]="!zoneForm.controls.isActive.value"
+          >
             {{ zoneForm.controls.isActive.value ? 'Activa' : 'Inactiva' }}
           </strong>
           <small>

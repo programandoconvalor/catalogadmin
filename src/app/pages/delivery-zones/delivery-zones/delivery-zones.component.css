@@ -1085,3 +1085,334 @@
     flex: 1;
   }
 }
+
+
+/* =========================================================
+   Ajustes visuales alineados con Categorías / Redes Sociales
+   ========================================================= */
+
+.delivery-row-action {
+  min-width: 76px;
+  min-height: 29px;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid #e5e8ef;
+  border-radius: 7px;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.delivery-row-action svg {
+  width: 12px;
+  height: 12px;
+}
+
+.delivery-row-action.edit {
+  border-color: #e5e8ef;
+  color: #344054;
+  background: #fff;
+}
+
+.delivery-row-action.edit:hover {
+  border-color: #c7d2fe;
+  color: #4338ca;
+  background: #eef2ff;
+}
+
+.delivery-row-action.status {
+  border-color: #e5e8ef;
+  color: #475467;
+  background: #fff;
+}
+
+.delivery-row-action.status:hover {
+  border-color: #d0d5dd;
+  color: #344054;
+  background: #f9fafb;
+}
+
+.delivery-row-action.delete {
+  border-color: #fbcfe8;
+  color: #e11d48;
+  background: #fff;
+}
+
+.delivery-row-action.delete:hover {
+  border-color: #fda4af;
+  color: #be123c;
+  background: #fff1f2;
+}
+
+.delivery-status-label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.delivery-status-label.is-active {
+  color: #039855;
+}
+
+.delivery-status-label.is-inactive {
+  color: #667085;
+}
+
+/* El switch conserva el rosa de marca; solo cambia el texto de estado. */
+.delivery-switch input:checked + .delivery-switch-track {
+  background: #ec4899;
+}
+
+/* Modo oscuro: superficie, tabla, controles y estados */
+:host-context(.dark) {
+  color: #e5e7eb;
+}
+
+:host-context(.dark) .delivery-page-card {
+  border-color: #303846;
+  background: #111827;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 18%);
+}
+
+:host-context(.dark) .delivery-page-header,
+:host-context(.dark) .delivery-summary,
+:host-context(.dark) .delivery-toolbar,
+:host-context(.dark) .delivery-pagination {
+  border-color: #303846;
+}
+
+:host-context(.dark) .delivery-page-header {
+  background: #111827;
+}
+
+:host-context(.dark) .delivery-summary {
+  background: #151e2d;
+}
+
+:host-context(.dark) .delivery-heading h2,
+:host-context(.dark) .delivery-summary-item strong,
+:host-context(.dark) .delivery-limit-copy strong,
+:host-context(.dark) .delivery-name-cell strong,
+:host-context(.dark) .delivery-cost,
+:host-context(.dark) .delivery-pagination-info strong {
+  color: #f9fafb;
+}
+
+:host-context(.dark) .delivery-heading p,
+:host-context(.dark) .delivery-summary-item div > span,
+:host-context(.dark) .delivery-limit-copy,
+:host-context(.dark) .delivery-name-cell small,
+:host-context(.dark) .delivery-time,
+:host-context(.dark) .delivery-pagination-info,
+:host-context(.dark) .delivery-pagination-controls label,
+:host-context(.dark) .delivery-page-number {
+  color: #a1aab8;
+}
+
+:host-context(.dark) .delivery-limit-track {
+  background: #374151;
+}
+
+:host-context(.dark) .delivery-table-wrap {
+  border-color: #303846;
+}
+
+:host-context(.dark) .delivery-table thead {
+  background: #1f2937;
+}
+
+:host-context(.dark) .delivery-table th,
+:host-context(.dark) .delivery-table td {
+  border-color: #303846;
+  color: #d1d5db;
+}
+
+:host-context(.dark) .delivery-table tbody tr:hover {
+  background: #ffffff08;
+}
+
+:host-context(.dark) .delivery-order {
+  background: #273449;
+  color: #e5e7eb;
+}
+
+:host-context(.dark) .delivery-status.is-active {
+  background: #063b2b;
+  color: #6ee7b7;
+}
+
+:host-context(.dark) .delivery-status.is-inactive {
+  background: #374151;
+  color: #d1d5db;
+}
+
+:host-context(.dark) .delivery-row-action {
+  border-color: #3b4657;
+  background: #1f2937;
+  color: #d1d5db;
+}
+
+:host-context(.dark) .delivery-row-action.edit:hover {
+  border-color: #6366f1;
+  background: #312e81;
+  color: #c7d2fe;
+}
+
+:host-context(.dark) .delivery-row-action.status:hover {
+  border-color: #6b7280;
+  background: #374151;
+  color: #f3f4f6;
+}
+
+:host-context(.dark) .delivery-row-action.delete {
+  border-color: #7f1d3d;
+  background: #1f2937;
+  color: #fda4af;
+}
+
+:host-context(.dark) .delivery-row-action.delete:hover {
+  border-color: #be123c;
+  background: #4c0519;
+  color: #fecdd3;
+}
+
+:host-context(.dark) .delivery-search-field,
+:host-context(.dark) .delivery-toolbar-select,
+:host-context(.dark) .delivery-sort-direction,
+:host-context(.dark) .delivery-pagination-controls select,
+:host-context(.dark) .delivery-page-button {
+  border-color: #4b5563;
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+:host-context(.dark) .delivery-search-field input {
+  color: #f9fafb;
+}
+
+:host-context(.dark) .delivery-search-field input::placeholder {
+  color: #9ca3af;
+}
+
+:host-context(.dark) .delivery-toolbar-select option,
+:host-context(.dark) .delivery-pagination-controls select option {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+:host-context(.dark) .delivery-page-button:hover:not(:disabled),
+:host-context(.dark) .delivery-sort-direction:hover {
+  border-color: #ec4899;
+  background: #3b1d35;
+  color: #f9a8d4;
+}
+
+:host-context(.dark) .delivery-state h3 {
+  color: #f9fafb;
+}
+
+:host-context(.dark) .delivery-state p {
+  color: #a1aab8;
+}
+
+/* Modal oscuro */
+:host-context(.dark) .delivery-form {
+  border-radius: 13px;
+  background: #111827;
+  color: #f9fafb;
+}
+
+:host-context(.dark) ::ng-deep app-modal .delivery-dialog {
+  border: 1px solid #374151;
+  background: #111827;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 48%);
+}
+
+:host-context(.dark) .delivery-form-header,
+:host-context(.dark) .delivery-form-footer {
+  border-color: #303846;
+}
+
+:host-context(.dark) .delivery-form-header h2 {
+  color: #f9fafb;
+}
+
+:host-context(.dark) .delivery-form-header p,
+:host-context(.dark) .delivery-input-group > small,
+:host-context(.dark) .delivery-status-field small {
+  color: #9ca3af;
+}
+
+:host-context(.dark) .delivery-input-group > span,
+:host-context(.dark) .delivery-status-field > div > span {
+  color: #e5e7eb;
+}
+
+:host-context(.dark) .delivery-input-group > input,
+:host-context(.dark) .delivery-input-prefix,
+:host-context(.dark) .delivery-input-prefix input {
+  border-color: #4b5563;
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+:host-context(.dark) .delivery-input-prefix > span {
+  border-color: #4b5563;
+  background: #273449;
+  color: #d1d5db;
+}
+
+:host-context(.dark) .delivery-input-group > input::placeholder,
+:host-context(.dark) .delivery-input-prefix input::placeholder {
+  color: #9ca3af;
+}
+
+:host-context(.dark) .delivery-status-field {
+  border-color: #374151;
+  background: #1f2937;
+}
+
+:host-context(.dark) .delivery-status-label.is-active {
+  color: #34d399;
+}
+
+:host-context(.dark) .delivery-status-label.is-inactive {
+  color: #9ca3af;
+}
+
+:host-context(.dark) .delivery-cancel-button {
+  border-color: #4b5563;
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+:host-context(.dark) .delivery-cancel-button:hover:not(:disabled) {
+  border-color: #6b7280;
+  background: #374151;
+}
+
+:host-context(.dark) .delivery-delete-warning {
+  border-color: #854d0e;
+  background: #422006;
+}
+
+:host-context(.dark) .delivery-delete-warning p {
+  color: #fde68a;
+}
+
+:host-context(.dark) .delivery-error {
+  border-color: #7f1d1d;
+  background: #450a0a;
+  color: #fecaca;
+}
+
+:host-context(.dark) .delivery-error button {
+  color: #fecaca;
+}
+
+@media (max-width: 700px) {
+  .delivery-actions {
+    justify-content: flex-start;
+  }
+}
