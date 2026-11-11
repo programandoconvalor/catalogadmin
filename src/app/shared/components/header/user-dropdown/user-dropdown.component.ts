@@ -38,15 +38,6 @@ export class UserDropdownComponent implements OnInit {
 
   private readonly failedTenantLogoUrl = signal<string | null>(null);
 
-  /**
-   * Identidad de marca obtenida desde:
-   * tenants/{tenantId}/branding/identity
-   */
-  private readonly identity = signal<{
-    storeName?: string;
-    logoUrl?: string;
-  } | null>(null);
-
   currentLocale = 'en';
 
   languages: Language[] = [
@@ -86,7 +77,13 @@ export class UserDropdownComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadBrandingIdentity();
+    /**
+     * Reutiliza la identidad compartida.
+     * Solo consulta Firestore si todavía no está cargada.
+     */
+    if (!this.brandingService.identity()) {
+      void this.loadBrandingIdentity();
+    }
 
     const savedDir = localStorage.getItem('dir');
 
@@ -95,32 +92,25 @@ export class UserDropdownComponent implements OnInit {
       document.documentElement.getAttribute('dir') === 'rtl'
     ) {
       this.currentLocale = 'ar';
-
       document.documentElement.setAttribute('dir', 'rtl');
     } else {
       this.currentLocale = 'en';
-
       document.documentElement.setAttribute('dir', 'ltr');
     }
   }
 
   /**
-   * Obtiene el nombre y el logo desde Firestore.
+   * Carga inicial de la identidad del tenant.
    */
   private async loadBrandingIdentity(): Promise<void> {
     try {
-      const result = await this.brandingService.getIdentity();
-
-      this.identity.set(result);
-
+      await this.brandingService.getIdentity();
       this.failedTenantLogoUrl.set(null);
     } catch (error) {
       console.error(
         '[UserDropdown] Error al cargar identidad de marca:',
         error
       );
-
-      this.identity.set(null);
     }
   }
 
@@ -133,22 +123,25 @@ export class UserDropdownComponent implements OnInit {
   }
 
   /**
-   * Nombre de la florería desde branding/identity.
+   * Nombre de la florería desde la señal compartida.
    */
   get tenantName(): string {
     return (
-      this.identity()?.storeName?.trim() ||
+      this.brandingService.identity()?.storeName?.trim() ||
+      this.tenantContextService.context$()?.tenant.name?.trim() ||
       'Administración de Catálogos para Florerías'
     );
   }
 
   /**
-   * Logo de la florería desde branding/identity.
-   * Si no existe o falla su carga, devuelve null
-   * para mostrar el SVG predeterminado.
+   * Logo desde la identidad compartida.
+   * Si no existe o falla, muestra el SVG predeterminado.
    */
   readonly tenantLogoUrl = computed(() => {
-    const logoUrl = this.identity()?.logoUrl?.trim();
+    const logoUrl = this.brandingService
+      .identity()
+      ?.logoUrl
+      ?.trim();
 
     if (!logoUrl || logoUrl === this.failedTenantLogoUrl()) {
       return null;
@@ -158,7 +151,10 @@ export class UserDropdownComponent implements OnInit {
   });
 
   onTenantLogoError(): void {
-    const logoUrl = this.identity()?.logoUrl?.trim();
+    const logoUrl = this.brandingService
+      .identity()
+      ?.logoUrl
+      ?.trim();
 
     if (logoUrl) {
       this.failedTenantLogoUrl.set(logoUrl);
@@ -256,7 +252,6 @@ export class UserDropdownComponent implements OnInit {
 
       this.tenantContextService.clear();
 
-      this.identity.set(null);
       this.failedTenantLogoUrl.set(null);
 
       await this.authService.signOut();

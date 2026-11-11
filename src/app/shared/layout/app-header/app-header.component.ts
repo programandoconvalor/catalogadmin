@@ -9,18 +9,21 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
+
 import { SidebarService } from '../../services/sidebar.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+
 import { ThemeToggleButtonComponent } from '../../components/common/theme-toggle/theme-toggle-button.component';
 import { NotificationDropdownComponent } from '../../components/header/notification-dropdown/notification-dropdown.component';
 import { UserDropdownComponent } from '../../components/header/user-dropdown/user-dropdown.component';
+
 import { TenantContextService } from '../../../core/tenant/tenant-context.service';
 import { BrandingIdentityService } from '../../../core/branding/branding-identity.service';
-import type { BrandingIdentity } from '../../../core/models/branding-identity.model';
 
 @Component({
   selector: 'app-header',
+  standalone: true,
   imports: [
     CommonModule,
     RouterModule,
@@ -38,21 +41,41 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
   private readonly tenantContextService = inject(TenantContextService);
   private readonly brandingIdentityService = inject(BrandingIdentityService);
 
-  private readonly identity = signal<BrandingIdentity | null>(null);
+  /**
+   * Evita mostrar una URL que ya falló al cargar.
+   */
   private readonly failedLogoUrl = signal<string | null>(null);
 
+  /**
+   * Nombre de la florería.
+   * La fuente principal es branding/identity.
+   */
   readonly tenantName = computed(() => {
-    const identityName = this.identity()?.storeName?.trim();
+    const identityName = this.brandingIdentityService
+      .identity()
+      ?.storeName
+      ?.trim();
 
-    return (
-      identityName ||
-      this.tenantContextService.context$()?.tenant.name.trim() ||
-      'Florería'
-    );
+    const tenantName = this.tenantContextService
+      .context$()
+      ?.tenant
+      ?.name
+      ?.trim();
+
+    return identityName || tenantName || 'Florería';
   });
 
+  /**
+   * Logo compartido desde BrandingIdentityService.
+   *
+   * Al actualizar identity(), Angular actualiza
+   * automáticamente el logo del Header.
+   */
   readonly tenantLogoUrl = computed(() => {
-    const logoUrl = this.identity()?.logoUrl?.trim();
+    const logoUrl = this.brandingIdentityService
+      .identity()
+      ?.logoUrl
+      ?.trim();
 
     if (!logoUrl || logoUrl === this.failedLogoUrl()) {
       return null;
@@ -68,24 +91,26 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
   }
 
-  async ngOnInit(): Promise<void> {
-    await this.loadBrandingIdentity();
+  ngOnInit(): void {
+    /**
+     * Reutiliza la identidad compartida.
+     * Solo consulta Firestore si todavía no está cargada.
+     */
+    if (!this.brandingIdentityService.identity()) {
+      void this.loadBrandingIdentity();
+    }
   }
 
   /**
-   * Obtiene el logo y nombre desde:
-   * tenants/{tenantId}/branding/identity
+   * Carga inicial de identidad del tenant.
    */
   private async loadBrandingIdentity(): Promise<void> {
     try {
-      const identity =
-        await this.brandingIdentityService.getIdentity();
-
-      this.identity.set(identity);
+      await this.brandingIdentityService.getIdentity();
       this.failedLogoUrl.set(null);
     } catch (error) {
       console.error(
-        'Error al cargar la identidad de marca del encabezado:',
+        '[Header] Error al cargar la identidad de marca:',
         error,
       );
     }
@@ -105,10 +130,13 @@ export class AppHeaderComponent implements OnInit, OnDestroy {
 
   /**
    * Si Firebase Storage no puede cargar la imagen,
-   * se muestra el icono predeterminado del HTML.
+   * el HTML muestra el icono predeterminado.
    */
   onTenantLogoError(): void {
-    const logoUrl = this.identity()?.logoUrl?.trim();
+    const logoUrl = this.brandingIdentityService
+      .identity()
+      ?.logoUrl
+      ?.trim();
 
     if (logoUrl) {
       this.failedLogoUrl.set(logoUrl);
