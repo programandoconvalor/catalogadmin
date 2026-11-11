@@ -26,7 +26,7 @@ import { ProductsComponent } from './pages/products/products.component';
 import { CategoriesComponent } from './pages/categories/categories.component';
 import { SocialNetworksComponent } from './pages/social-networks/social-networks.component';
 import { BrandingComponent } from './pages/branding/branding.component';
-
+import { ContactComponent } from './pages/contact/contact.component';
 import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
 
@@ -62,15 +62,15 @@ export const routes: Routes = [
         component: SocialNetworksComponent,
         title: 'Redes Sociales',
       },
+      {
+        path: 'catalog/contact',
+        component: ContactComponent,
+        title: 'Contacto',
+      },
 
       // =====================================================
       // BRANDING / PROFILE
       // =====================================================
-      {
-         path: 'catalog/branding',
-        component: BrandingComponent,
-        title: 'Logo y Nombre',
-      },
       {
         path: 'catalog/branding',
         component: BrandingComponent,

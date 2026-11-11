@@ -71,7 +71,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     },
     {
       name: 'Contacto',
-      path: '/profile',
+      path: '/catalog/contact',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 2.8a2 2 0 0 1-.6 1.9L7.7 9.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 1.9-.6l2.8.5a2 2 0 0 1 1.7 2.6Z"/></svg>`,
     },
     {
@@ -255,6 +255,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       '/catalog/products': 'Productos',
       '/catalog/categories': 'Categorías',
       '/catalog/social-networks': 'Redes Sociales',
+      '/catalog/contact': 'Contacto',
     };
 
     this.activeMenuItem = routeMenuMap[cleanUrl] ?? null;

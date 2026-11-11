@@ -1,0 +1,567 @@
+
+<section class="contact-page">
+  <header class="contact-heading">
+    <div class="heading-icon">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.84.58 2.8.7A2 2 0 0 1 22 16.92z"/>
+      </svg>
+    </div>
+
+    <div>
+      <h1>Contacto</h1>
+      <p>Configura los datos de contacto de tu florería.</p>
+    </div>
+  </header>
+
+  <div class="contact-divider"></div>
+
+  <div class="section-intro">
+    <h2>Información de contacto</h2>
+    <p>
+      Estos datos se mostrarán en tu catálogo público y permitirán
+      que tus clientes se comuniquen contigo.
+    </p>
+  </div>
+
+  <div *ngIf="loading" class="contact-loading">
+    <span class="loading-spinner"></span>
+    <span>Cargando información de contacto...</span>
+  </div>
+
+  <ng-container *ngIf="!loading && loaded">
+    <form
+      [formGroup]="contactForm"
+      (ngSubmit)="saveChanges()"
+      class="contact-layout"
+    >
+      <div class="contact-form-card">
+        <div class="form-grid">
+
+          <!-- TELÉFONO PRINCIPAL -->
+          <div class="field-group">
+            <label>
+              Teléfono principal
+              <span class="required">*</span>
+            </label>
+
+            <div class="phone-control">
+              <button
+                type="button"
+                class="country-trigger"
+                [attr.aria-expanded]="openCountryPicker === 'phone'"
+                (click)="openCountry('phone', $event)"
+              >
+                <span class="country-flag">
+                  <img
+                    [src]="getCountryFlagUrl(phoneCountry)"
+                    [alt]="'Bandera de ' + phoneCountry.name"
+                    loading="lazy"
+                    width="24"
+                    height="16"
+                  />
+                </span>
+                <span class="country-dial-code">
+                  {{ phoneCountry.dialCode }}
+                </span>
+                <span class="chevron">⌄</span>
+              </button>
+
+              <input
+                type="tel"
+                formControlName="phone"
+                placeholder="987 654 3210"
+                autocomplete="tel-national"
+              />
+
+              <div
+                class="country-dropdown"
+                *ngIf="openCountryPicker === 'phone'"
+                (click)="$event.stopPropagation()"
+              >
+                <div class="country-search">
+                  <span>⌕</span>
+                  <input
+                    type="text"
+                    placeholder="Buscar país o lada..."
+                    [value]="countrySearch.phone"
+                    (input)="onCountrySearch('phone', $any($event.target).value)"
+                  />
+                </div>
+
+                <div class="country-options">
+                  <button
+                    type="button"
+                    class="country-option"
+                    *ngFor="let country of filteredCountries"
+                    [class.selected]="country.code === phoneCountry.code"
+                    (click)="selectCountry(country, $event)"
+                  >
+                    <span class="country-flag">
+                  <img
+                    [src]="getCountryFlagUrl(country)"
+                    [alt]="'Bandera de ' + country.name"
+                    loading="lazy"
+                    width="24"
+                    height="16"
+                  />
+                </span>
+                    <span class="country-option-name">
+                      {{ country.name }}
+                    </span>
+                    <span class="country-option-code">
+                      {{ country.dialCode }}
+                    </span>
+                    <span
+                      class="country-check"
+                      *ngIf="country.code === phoneCountry.code"
+                    >✓</span>
+                  </button>
+
+                  <p
+                    class="no-countries"
+                    *ngIf="filteredCountries.length === 0"
+                  >
+                    No se encontraron países.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <small
+              class="field-error"
+              *ngIf="
+                contactForm.controls.phone.touched &&
+                contactForm.controls.phone.invalid
+              "
+            >
+              Ingresa un teléfono válido.
+            </small>
+          </div>
+
+          <!-- TELÉFONO ADICIONAL -->
+          <div class="field-group">
+            <label>Teléfono adicional</label>
+
+            <div class="phone-control">
+              <button
+                type="button"
+                class="country-trigger"
+                [attr.aria-expanded]="openCountryPicker === 'additionalPhone'"
+                (click)="openCountry('additionalPhone', $event)"
+              >
+                <span class="country-flag">
+                  <img
+                    [src]="getCountryFlagUrl(additionalPhoneCountry)"
+                    [alt]="'Bandera de ' + additionalPhoneCountry.name"
+                    loading="lazy"
+                    width="24"
+                    height="16"
+                  />
+                </span>
+                <span class="country-dial-code">
+                  {{ additionalPhoneCountry.dialCode }}
+                </span>
+                <span class="chevron">⌄</span>
+              </button>
+
+              <input
+                type="tel"
+                formControlName="additionalPhone"
+                placeholder="999 888 7777"
+              />
+
+              <div
+                class="country-dropdown"
+                *ngIf="openCountryPicker === 'additionalPhone'"
+                (click)="$event.stopPropagation()"
+              >
+                <div class="country-search">
+                  <span>⌕</span>
+                  <input
+                    type="text"
+                    placeholder="Buscar país o lada..."
+                    [value]="countrySearch.additionalPhone"
+                    (input)="onCountrySearch('additionalPhone', $any($event.target).value)"
+                  />
+                </div>
+
+                <div class="country-options">
+                  <button
+                    type="button"
+                    class="country-option"
+                    *ngFor="let country of filteredCountries"
+                    [class.selected]="country.code === additionalPhoneCountry.code"
+                    (click)="selectCountry(country, $event)"
+                  >
+                    <span class="country-flag">
+                  <img
+                    [src]="getCountryFlagUrl(country)"
+                    [alt]="'Bandera de ' + country.name"
+                    loading="lazy"
+                    width="24"
+                    height="16"
+                  />
+                </span>
+                    <span class="country-option-name">
+                      {{ country.name }}
+                    </span>
+                    <span class="country-option-code">
+                      {{ country.dialCode }}
+                    </span>
+                    <span
+                      class="country-check"
+                      *ngIf="country.code === additionalPhoneCountry.code"
+                    >✓</span>
+                  </button>
+
+                  <p
+                    class="no-countries"
+                    *ngIf="filteredCountries.length === 0"
+                  >
+                    No se encontraron países.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <small
+              class="field-error"
+              *ngIf="
+                contactForm.controls.additionalPhone.touched &&
+                contactForm.controls.additionalPhone.invalid
+              "
+            >
+              Ingresa un teléfono válido.
+            </small>
+          </div>
+
+          <!-- WHATSAPP -->
+          <div class="field-group whatsapp-field">
+            <label>WhatsApp</label>
+
+            <div class="whatsapp-row">
+              <div class="phone-control">
+                <button
+                  type="button"
+                  class="country-trigger"
+                  [attr.aria-expanded]="openCountryPicker === 'whatsapp'"
+                  (click)="openCountry('whatsapp', $event)"
+                >
+                  <span class="country-flag">
+                  <img
+                    [src]="getCountryFlagUrl(whatsappCountry)"
+                    [alt]="'Bandera de ' + whatsappCountry.name"
+                    loading="lazy"
+                    width="24"
+                    height="16"
+                  />
+                </span>
+                  <span class="country-dial-code">
+                    {{ whatsappCountry.dialCode }}
+                  </span>
+                  <span class="chevron">⌄</span>
+                </button>
+
+                <input
+                  type="tel"
+                  formControlName="whatsapp"
+                  placeholder="987 654 3210"
+                />
+
+                <div
+                  class="country-dropdown"
+                  *ngIf="openCountryPicker === 'whatsapp'"
+                  (click)="$event.stopPropagation()"
+                >
+                  <div class="country-search">
+                    <span>⌕</span>
+                    <input
+                      type="text"
+                      placeholder="Buscar país o lada..."
+                      [value]="countrySearch.whatsapp"
+                      (input)="onCountrySearch('whatsapp', $any($event.target).value)"
+                    />
+                  </div>
+
+                  <div class="country-options">
+                    <button
+                      type="button"
+                      class="country-option"
+                      *ngFor="let country of filteredCountries"
+                      [class.selected]="country.code === whatsappCountry.code"
+                      (click)="selectCountry(country, $event)"
+                    >
+                      <span class="country-flag">
+                  <img
+                    [src]="getCountryFlagUrl(country)"
+                    [alt]="'Bandera de ' + country.name"
+                    loading="lazy"
+                    width="24"
+                    height="16"
+                  />
+                </span>
+                      <span class="country-option-name">
+                        {{ country.name }}
+                      </span>
+                      <span class="country-option-code">
+                        {{ country.dialCode }}
+                      </span>
+                      <span
+                        class="country-check"
+                        *ngIf="country.code === whatsappCountry.code"
+                      >✓</span>
+                    </button>
+
+                    <p
+                      class="no-countries"
+                      *ngIf="filteredCountries.length === 0"
+                    >
+                      No se encontraron países.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="use-main-phone"
+                (click)="useMainPhoneForWhatsapp()"
+              >
+                <span>▣</span>
+                Usar teléfono principal
+              </button>
+            </div>
+
+            <small
+              class="field-error"
+              *ngIf="
+                contactForm.controls.whatsapp.touched &&
+                contactForm.controls.whatsapp.invalid
+              "
+            >
+              Ingresa un teléfono válido.
+            </small>
+          </div>
+
+          <!-- CORREO ELECTRÓNICO -->
+          <div class="field-group">
+            <label>
+              Correo electrónico
+              <span class="required">*</span>
+            </label>
+
+            <div class="text-control">
+              <span class="field-icon">✉</span>
+              <input
+                type="email"
+                formControlName="email"
+                placeholder="contacto@tufloreria.com"
+                autocomplete="email"
+              />
+            </div>
+
+            <small
+              class="field-error"
+              *ngIf="
+                contactForm.controls.email.touched &&
+                contactForm.controls.email.invalid
+              "
+            >
+              Ingresa un correo electrónico válido.
+            </small>
+          </div>
+
+          <!-- PÁGINA WEB -->
+          <div class="field-group">
+            <label>
+              Página web
+              <span class="optional">(opcional)</span>
+            </label>
+
+            <div class="text-control">
+              <span class="field-icon">◎</span>
+              <input
+                type="text"
+                formControlName="website"
+                placeholder="https://www.tufloreria.com"
+                autocomplete="url"
+              />
+            </div>
+          </div>
+
+          <!-- HORARIO -->
+          <div class="field-group full-width">
+            <label>Horario de atención</label>
+
+            <div class="text-control">
+              <span class="field-icon">◷</span>
+              <input
+                type="text"
+                formControlName="businessHours"
+                placeholder="Lunes a Sábado: 8:00 a. m. – 7:00 p. m."
+              />
+            </div>
+          </div>
+
+          <!-- MENSAJE -->
+          <div class="field-group full-width">
+            <label>
+              Mensaje de contacto
+              <span class="optional">(opcional)</span>
+            </label>
+
+            <div class="message-control">
+              <span class="field-icon">▢</span>
+
+              <textarea
+                formControlName="message"
+                rows="3"
+                maxlength="200"
+                placeholder="Escríbenos para consultas, pedidos especiales o asesoría personalizada."
+              ></textarea>
+
+              <span class="character-count">
+                {{ messageLength }} / 200
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- VISTA PREVIA -->
+      <aside class="preview-card">
+        <div class="preview-heading">
+          <h2>Vista previa</h2>
+          <p>Así verán tus datos de contacto tus clientes.</p>
+        </div>
+
+        <div class="flower-decoration" aria-hidden="true">
+          ✿
+        </div>
+
+        <div class="preview-content">
+          <h3>Contáctanos</h3>
+
+          <div
+            class="preview-item"
+            *ngIf="contactForm.controls.phone.value"
+          >
+            <span class="preview-icon">♧</span>
+            <span class="preview-value">{{ fullPhone }}</span>
+          </div>
+
+          <div
+            class="preview-item"
+            *ngIf="contactForm.controls.whatsapp.value"
+          >
+            <span class="preview-icon">◉</span>
+            <span class="preview-value">{{ fullWhatsapp }}</span>
+          </div>
+
+          <div
+            class="preview-item"
+            *ngIf="contactForm.controls.additionalPhone.value"
+          >
+            <span class="preview-icon">☎</span>
+            <span class="preview-value">{{ fullAdditionalPhone }}</span>
+          </div>
+
+          <div
+            class="preview-item"
+            *ngIf="contactForm.controls.email.value"
+          >
+            <span class="preview-icon">✉</span>
+            <span class="preview-value">
+              {{ contactForm.controls.email.value }}
+            </span>
+          </div>
+
+          <div
+            class="preview-item"
+            *ngIf="contactForm.controls.website.value"
+          >
+            <span class="preview-icon">◎</span>
+            <span class="preview-value">
+              {{ contactForm.controls.website.value }}
+            </span>
+          </div>
+
+          <div
+            class="preview-item"
+            *ngIf="contactForm.controls.businessHours.value"
+          >
+            <span class="preview-icon">◷</span>
+            <span class="preview-value">
+              {{ contactForm.controls.businessHours.value }}
+            </span>
+          </div>
+
+          <div
+            class="preview-item preview-message"
+            *ngIf="contactForm.controls.message.value"
+          >
+            <span class="preview-icon">▢</span>
+            <span class="preview-value">
+              {{ contactForm.controls.message.value }}
+            </span>
+          </div>
+
+          <p
+            class="preview-empty"
+            *ngIf="
+              !contactForm.controls.phone.value &&
+              !contactForm.controls.whatsapp.value &&
+              !contactForm.controls.email.value
+            "
+          >
+            Tus datos de contacto aparecerán aquí.
+          </p>
+        </div>
+      </aside>
+
+      <!-- ACCIONES -->
+      <footer class="contact-actions">
+        <div class="contact-hint">
+          <span class="hint-icon">ⓘ</span>
+          <p>
+            Mantén tu información de contacto actualizada para brindar
+            una mejor atención a tus clientes.
+          </p>
+        </div>
+
+        <div class="action-buttons">
+          <button
+            type="button"
+            class="btn-undo"
+            [disabled]="saving || !loaded"
+            (click)="undoChanges()"
+          >
+            <span>↶</span>
+            Deshacer cambios
+          </button>
+
+          <button
+            type="submit"
+            class="btn-save"
+            [disabled]="saving || !loaded"
+          >
+            <span *ngIf="!saving">▣</span>
+            <span
+              class="loading-spinner small"
+              *ngIf="saving"
+            ></span>
+            {{ saving ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </footer>
+    </form>
+  </ng-container>
+</section>
