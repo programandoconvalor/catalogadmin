@@ -21,12 +21,16 @@ import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { ResetPasswordComponent } from './pages/auth-pages/reset-password/reset-password.component';
 import { CalenderComponent } from './pages/calender/calender.component';
 
+// CATALOG
 import { CatalogPageComponent } from './pages/catalog/catalog-page.component';
 import { ProductsComponent } from './pages/products/products.component';
 import { CategoriesComponent } from './pages/categories/categories.component';
 import { SocialNetworksComponent } from './pages/social-networks/social-networks.component';
 import { BrandingComponent } from './pages/branding/branding.component';
 import { ContactComponent } from './pages/contact/contact.component';
+import { DeliveryZonesComponent } from './pages/delivery-zones/delivery-zones/delivery-zones.component';
+
+// AUTH
 import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
 
@@ -67,9 +71,15 @@ export const routes: Routes = [
         component: ContactComponent,
         title: 'Contacto',
       },
+      {
+        path: 'catalog/delivery-zones',
+        component: DeliveryZonesComponent,
+        title: 'Entregas y Envíos',
+      },
+      
 
       // =====================================================
-      // BRANDING / PROFILE
+      // BRANDING
       // =====================================================
       {
         path: 'catalog/branding',

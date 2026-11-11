@@ -19,21 +19,28 @@ import {
 } from '@angular/core';
 
 import {
+
   AbstractControl,
+
   FormArray,
+
   FormControl,
+
   FormBuilder,
+
   FormGroup,
+
   ReactiveFormsModule,
+
   ValidationErrors,
+
   ValidatorFn,
+
   Validators,
+
 } from '@angular/forms';
 
-
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-
-
 
 import { CatalogService } from '../../core/catalog/catalog.service';
 
@@ -52,7 +59,9 @@ import {
 } from '../../core/storage/storage.service';
 
 import {
+
   CatalogId,
+
   CatalogItem,
 
   CatalogItemInput,
@@ -62,6 +71,7 @@ import {
   CatalogProductCommercialData,
 
   CatalogProductSize,
+
 } from '../../core/models/catalog-item.model';
 
 import { normalizeCatalogIncludes } from '../../core/catalog/catalog-item.mapper';
@@ -73,16 +83,14 @@ import {
   CategoryInput,
 
   CategoryStatus,
+
 } from '../../core/models/category.model';
 
 import { NotificationService } from '../../core/notifications/notification.service';
 
 import { DeliveryZone, DeliveryZoneInput, DeliveryZoneStatus } from '../../core/models/delivery-zone.model';
 
-
 import { ModalComponent } from '../../shared/components/ui/modal/modal.component';
-
-
 
 type PendingDeletion =
 
@@ -91,8 +99,6 @@ type PendingDeletion =
   | { kind: 'category'; id: string; label: string }
 
   | { kind: 'deliveryZone'; id: string; label: string };
-
-
 
 interface ProductSizeControls {
 
@@ -106,11 +112,7 @@ interface ProductSizeControls {
 
 }
 
-
-
 type ProductSizeFormGroup = FormGroup<ProductSizeControls>;
-
-
 
 @Component({
 
@@ -121,7 +123,6 @@ type ProductSizeFormGroup = FormGroup<ProductSizeControls>;
     CommonModule,
 
     ReactiveFormsModule,
-
 
     ModalComponent,
 
@@ -134,7 +135,6 @@ type ProductSizeFormGroup = FormGroup<ProductSizeControls>;
 })
 
 export class ProductsComponent implements OnInit {
-
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -159,28 +159,38 @@ export class ProductsComponent implements OnInit {
   private lastReportedDuplicateOrder: number | null = null;
 
   private readonly uniqueSortOrderValidator: ValidatorFn = (
+
     control: AbstractControl,
+
   ): ValidationErrors | null => {
+
     if (control.value === null || control.value === '') {
+
       return null;
+
     }
 
     const sortOrder = Number(control.value);
 
     if (!Number.isInteger(sortOrder)) {
+
       return { wholeNumber: true };
+
     }
 
     const duplicate = this.items.some(
+
       (item) =>
+
         item.id !== this.editingItemId &&
+
         item.sortOrder === sortOrder,
+
     );
 
     return duplicate ? { duplicateOrder: { sortOrder } } : null;
+
   };
-
-
 
   readonly itemForm = this.formBuilder.group({
 
@@ -199,12 +209,19 @@ export class ProductsComponent implements OnInit {
     status: ['active' as CatalogItemStatus, Validators.required],
 
     sortOrder: [
+
       0,
+
       [
+
         Validators.required,
+
         Validators.min(0),
+
         this.uniqueSortOrderValidator,
+
       ],
+
     ],
 
     sku: ['', [Validators.required, Validators.pattern(/\S/)]],
@@ -216,10 +233,6 @@ export class ProductsComponent implements OnInit {
     includes: this.formBuilder.array<FormControl<string>>([]),
 
   });
-
-
-
-
 
   readonly currencies = [
 
@@ -255,13 +268,9 @@ export class ProductsComponent implements OnInit {
 
   ];
 
-
-
   currencySearch = '';
 
   currencyDropdownOpen = false;
-
-
 
   get selectedCurrency() {
 
@@ -270,8 +279,6 @@ export class ProductsComponent implements OnInit {
     return this.currencies.find((currency) => currency.code === code) ?? this.currencies[0];
 
   }
-
-
 
   get filteredCurrencies() {
 
@@ -285,8 +292,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   toggleCurrencyDropdown(): void {
 
     this.currencyDropdownOpen = !this.currencyDropdownOpen;
@@ -294,8 +299,6 @@ export class ProductsComponent implements OnInit {
     if (this.currencyDropdownOpen) this.currencySearch = '';
 
   }
-
-
 
   selectCurrency(code: string): void {
 
@@ -313,8 +316,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   readonly categoryForm = this.formBuilder.group({
 
     name: ['', Validators.required],
@@ -324,8 +325,6 @@ export class ProductsComponent implements OnInit {
     sortOrder: [0, [Validators.required, Validators.min(0)]],
 
   });
-
-
 
   readonly deliveryZoneForm = this.formBuilder.group({
 
@@ -338,8 +337,6 @@ export class ProductsComponent implements OnInit {
     sortOrder: [0, [Validators.required, Validators.min(0)]],
 
   });
-
-
 
   readonly catalogId: CatalogId = 'normal';
 
@@ -421,15 +418,11 @@ export class ProductsComponent implements OnInit {
 
   private removedImageUrls: string[] = [];
 
-
-
   get totalProductImages(): number {
 
     return this.existingImageUrls.length + this.selectedImages.length;
 
   }
-
-
 
   get canAddProductImage(): boolean {
 
@@ -438,40 +431,52 @@ export class ProductsComponent implements OnInit {
   }
 
   get hasProductImage(): boolean {
+
     return this.totalProductImages > 0;
+
   }
 
   get hasActiveFilters(): boolean {
+
     return Boolean(
+
       this.searchTerm.trim() ||
+
       this.categoryFilter ||
+
       this.statusFilter ||
+
       this.minPriceFilter ||
+
       this.maxPriceFilter,
+
     );
+
   }
 
   private editingCommercialData?: CatalogProductCommercialData;
 
   private lastLoggedUploadProgress = 0;
 
-
-
   constructor() {
 
     this.destroyRef.onDestroy(() => this.releaseImagePreviews());
 
     this.includes.valueChanges
+
       .pipe(takeUntilDestroyed(this.destroyRef))
+
       .subscribe((values) => {
+
         this.validIncludesCount =
+
           normalizeCatalogIncludes(values).length;
+
         this.changeDetectorRef.markForCheck();
+
       });
 
   }
-
-
 
   private runInAngular(action: () => void): void {
 
@@ -485,17 +490,15 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   ngOnInit(): void {
+
     void this.loadData();
+
   }
 
   get filteredItems(): CatalogItem[] {
 
     const search = this.searchTerm.trim().toLocaleLowerCase();
-
-
 
     return this.items
 
@@ -519,12 +522,14 @@ export class ProductsComponent implements OnInit {
 
           !this.statusFilter || item.status === this.statusFilter;
 
-
-
         const minimum = this.minPriceFilter.trim() === '' ? null : Number(this.minPriceFilter);
+
         const maximum = this.maxPriceFilter.trim() === '' ? null : Number(this.maxPriceFilter);
+
         const matchesMinPrice = minimum === null || item.price >= minimum;
+
         const matchesMaxPrice = maximum === null || item.price <= maximum;
+
         return matchesSearch && matchesCategory && matchesStatus && matchesMinPrice && matchesMaxPrice;
 
       })
@@ -549,60 +554,86 @@ export class ProductsComponent implements OnInit {
 
                 : first.sortOrder - second.sortOrder;
 
-
-
         return comparison * direction;
 
       });
 
   }
 
-
-
   get totalPages(): number {
+
     return Math.max(1, Math.ceil(this.filteredItems.length / this.pageSize));
+
   }
 
   get nextSortOrder(): number {
+
     return (
+
       Math.max(
+
         0,
+
         this.items.length,
+
         ...this.items.map((item) =>
+
           Number.isInteger(item.sortOrder) ? item.sortOrder : 0,
+
         ),
+
       ) + 1
+
     );
+
   }
 
   get paginatedItems(): CatalogItem[] {
+
     const start = (this.currentPage - 1) * this.pageSize;
+
     return this.filteredItems.slice(start, start + this.pageSize);
+
   }
 
   get firstVisibleItem(): number {
+
     return this.filteredItems.length === 0
+
       ? 0
+
       : (this.currentPage - 1) * this.pageSize + 1;
+
   }
 
   get lastVisibleItem(): number {
+
     return Math.min(this.currentPage * this.pageSize, this.filteredItems.length);
+
   }
 
   goToPage(page: number): void {
+
     this.currentPage = Math.min(Math.max(1, page), this.totalPages);
+
   }
 
   changePageSize(event: Event): void {
+
     const value = Number((event.target as HTMLSelectElement).value);
+
     if (!this.pageSizeOptions.includes(value)) return;
+
     this.pageSize = value;
+
     this.currentPage = 1;
+
   }
 
   private resetPagination(): void {
+
     this.currentPage = 1;
+
   }
 
   get activeCategories(): Category[] {
@@ -615,86 +646,102 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   get productSizes(): FormArray<ProductSizeFormGroup> {
 
     return this.itemForm.controls.productSizes;
 
   }
 
-
-
   get includes(): FormArray<FormControl<string>> {
+
     return this.itemForm.controls.includes;
+
   }
 
   validIncludesCount = 0;
 
-
-
-
-
   onSearchChange(event: Event): void {
 
     this.searchTerm = (event.target as HTMLInputElement).value;
+
     this.resetPagination();
 
   }
-
-
 
   onCategoryFilterChange(event: Event): void {
 
     this.categoryFilter = (event.target as HTMLSelectElement).value;
+
     this.resetPagination();
 
   }
-
-
 
   onStatusFilterChange(event: Event): void {
 
     this.statusFilter = (event.target as HTMLSelectElement)
 
       .value as CatalogItemStatus | '';
+
     this.resetPagination();
 
   }
 
-
-
   onMinPriceChange(event: Event): void {
+
     this.minPriceFilter = (event.target as HTMLInputElement).value;
+
   }
 
   onMaxPriceChange(event: Event): void {
+
     this.maxPriceFilter = (event.target as HTMLInputElement).value;
+
   }
 
   applyFilters(): void {
+
     const min = this.minPriceFilter.trim() === '' ? null : Number(this.minPriceFilter);
+
     const max = this.maxPriceFilter.trim() === '' ? null : Number(this.maxPriceFilter);
+
     if ((min !== null && (!Number.isFinite(min) || min < 0)) ||
+
         (max !== null && (!Number.isFinite(max) || max < 0)) ||
+
         (min !== null && max !== null && min > max)) {
+
       this.errorMessage = 'Revisa el rango de precios: el mínimo no puede superar al máximo.';
+
       return;
+
     }
+
     this.errorMessage = null;
+
     this.resetPagination();
+
   }
 
   clearFilters(): void {
+
     this.searchTerm = '';
+
     this.categoryFilter = '';
+
     this.statusFilter = '';
+
     this.minPriceFilter = '';
+
     this.maxPriceFilter = '';
+
     this.sortBy = 'order';
+
     this.sortDirection = 'asc';
+
     this.errorMessage = null;
+
     this.resetPagination();
+
   }
 
   onSortChange(event: Event): void {
@@ -708,51 +755,73 @@ export class ProductsComponent implements OnInit {
       | 'code'
 
       | 'price';
+
     this.resetPagination();
 
   }
-
-
 
   toggleSortDirection(): void {
 
     this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+
     this.resetPagination();
 
   }
 
-
-
   async loadData(): Promise<void> {
+
     this.loading = true;
+
     this.errorMessage = null;
 
     try {
+
       const [items, categories] = await Promise.all([
+
         this.catalogService.getItems(this.catalogId),
+
         this.categoryService.getCategories(this.catalogId),
+
       ]);
 
       this.runInAngular(() => {
+
         this.items = items;
+
         this.categories = categories;
+
         this.deliveryZones = [];
+
         this.currentPage = 1;
+
       });
+
     } catch (error: unknown) {
+
       console.error('[Products] No fue posible cargar los productos:', error);
 
       this.runInAngular(() => {
+
         this.errorMessage = this.getErrorMessage(
+
           error,
+
           'No fue posible cargar los productos.',
+
         );
+
       });
+
     } finally {
+
       this.runInAngular(() => {
+
         this.loading = false;
+
       });
+
     }
+
   }
 
   openCreateItem(): void {
@@ -760,11 +829,10 @@ export class ProductsComponent implements OnInit {
     this.clearFeedback();
 
     this.editingItemId = null;
+
     this.lastReportedDuplicateOrder = null;
 
     this.editingCommercialData = undefined;
-
-
 
     this.itemForm.reset({
 
@@ -792,8 +860,6 @@ export class ProductsComponent implements OnInit {
 
     this.clearCommercialControls();
 
-
-
     this.existingImageUrls = [];
 
     this.removedImageUrls = [];
@@ -806,14 +872,11 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   async openEditItem(item: CatalogItem): Promise<void> {
 
     this.clearFeedback();
+
     this.lastReportedDuplicateOrder = null;
-
-
 
     try {
 
@@ -825,8 +888,6 @@ export class ProductsComponent implements OnInit {
 
       );
 
-
-
       if (!currentItem) {
 
         this.errorMessage =
@@ -836,8 +897,6 @@ export class ProductsComponent implements OnInit {
         return;
 
       }
-
-
 
       this.runInAngular(() => {
 
@@ -852,8 +911,6 @@ export class ProductsComponent implements OnInit {
         this.clearSelectedImages();
 
         this.imageError = null;
-
-
 
         this.itemForm.reset({
 
@@ -882,6 +939,7 @@ export class ProductsComponent implements OnInit {
         this.setCommercialControls(currentItem.commercialData);
 
         this.itemModalOpen = true;
+
         this.reportDuplicateOrder();
 
       });
@@ -895,8 +953,6 @@ export class ProductsComponent implements OnInit {
         error,
 
       );
-
-
 
       this.runInAngular(() => {
 
@@ -914,28 +970,27 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   async saveItem(): Promise<void> {
 
     if (this.itemForm.invalid || !this.hasProductImage || this.savingItem) {
 
       this.itemForm.markAllAsTouched();
+
       if (!this.hasProductImage) {
+
         this.imageError = 'Agrega al menos una imagen del producto.';
+
         this.notificationService.error(this.imageError);
+
       }
+
       this.reportDuplicateOrder();
 
       return;
 
     }
 
-
-
     const value = this.itemForm.getRawValue();
-
-
 
     const productSizes = this.productSizes.getRawValue()
 
@@ -987,8 +1042,6 @@ export class ProductsComponent implements OnInit {
 
     }
 
-
-
     const item: CatalogItemInput = {
 
       code: value.code.trim() || this.generateProductCode(),
@@ -1006,6 +1059,7 @@ export class ProductsComponent implements OnInit {
       sortOrder,
 
       // Fuente canónica compartida con commercialData.includes.
+
       includes,
 
       commercialData: this.buildCommercialData({
@@ -1032,15 +1086,11 @@ export class ProductsComponent implements OnInit {
 
     };
 
-
-
     this.savingItem = true;
 
     this.clearFeedback();
 
     this.imageError = null;
-
-
 
     const uploadedImages: UploadedProductImage[] = [];
 
@@ -1051,8 +1101,6 @@ export class ProductsComponent implements OnInit {
     const updatingItem = this.editingItemId !== null;
 
     let documentSaved = false;
-
-
 
     try {
 
@@ -1066,8 +1114,6 @@ export class ProductsComponent implements OnInit {
 
         this.lastLoggedUploadProgress = 0;
 
-
-
         for (const file of this.selectedImages) {
 
           console.info('[CatalogPage] Inicia carga de imagen:', {
@@ -1079,8 +1125,6 @@ export class ProductsComponent implements OnInit {
             contentType: file.type,
 
           });
-
-
 
           const uploadedImage = await this.storageService.uploadProductImage(
 
@@ -1130,15 +1174,11 @@ export class ProductsComponent implements OnInit {
 
       }
 
-
-
       this.runInAngular(() => {
 
         this.savePhase = 'writingDocument';
 
       });
-
-
 
       const finalImageUrls = [
 
@@ -1147,8 +1187,6 @@ export class ProductsComponent implements OnInit {
         ...uploadedImages.map((image) => image.downloadUrl),
 
       ].filter((url, index, urls) => Boolean(url) && urls.indexOf(url) === index).slice(0, 3);
-
-
 
       const itemToSave: CatalogItemInput = {
 
@@ -1164,8 +1202,6 @@ export class ProductsComponent implements OnInit {
 
       };
 
-
-
       if (this.editingItemId) {
 
         const itemId = this.editingItemId;
@@ -1177,8 +1213,6 @@ export class ProductsComponent implements OnInit {
           documentId: itemId,
 
         });
-
-
 
         try {
 
@@ -1193,7 +1227,9 @@ export class ProductsComponent implements OnInit {
           );
 
           // Firestore confirmó la escritura; evita limpiar imágenes ya referenciadas
+
           // si la lectura posterior del documento llegara a fallar.
+
           documentSaved = true;
 
         } catch (firestoreError) {
@@ -1202,29 +1238,42 @@ export class ProductsComponent implements OnInit {
 
         }
 
-
-
         // Recupera el documento confirmado por el servidor para mantener
+
         // sincronizada la lista con la misma información que abrirá el modal.
+
         const savedItem = await this.catalogService.getItem(
+
           this.catalogId,
+
           itemId,
+
         );
 
         if (!savedItem) {
+
           throw new Error(
+
             'El producto se guardó, pero no fue posible recuperar su información actualizada.',
+
           );
+
         }
 
         this.runInAngular(() => {
+
           this.items = this.items
+
             .map((existing) =>
+
               existing.id === itemId ? savedItem : existing,
+
             )
+
             .sort((first, second) => first.sortOrder - second.sortOrder);
 
           this.successMessage = 'Producto actualizado correctamente.';
+
         });
 
       } else {
@@ -1236,8 +1285,6 @@ export class ProductsComponent implements OnInit {
           catalogId: this.catalogId,
 
         });
-
-
 
         try {
 
@@ -1255,8 +1302,6 @@ export class ProductsComponent implements OnInit {
 
         }
 
-
-
         this.runInAngular(() => {
 
           this.items = [
@@ -1266,8 +1311,6 @@ export class ProductsComponent implements OnInit {
             { id: itemId, ...itemToSave },
 
           ].sort((first, second) => first.sortOrder - second.sortOrder);
-
-
 
           this.successMessage = 'Producto creado correctamente.';
 
@@ -1282,8 +1325,6 @@ export class ProductsComponent implements OnInit {
         });
 
       }
-
-
 
       documentSaved = true;
 
@@ -1309,8 +1350,6 @@ export class ProductsComponent implements OnInit {
 
       }
 
-
-
       this.notificationService.success(
 
         updatingItem
@@ -1320,8 +1359,6 @@ export class ProductsComponent implements OnInit {
           : '¡Producto guardado correctamente!',
 
       );
-
-
 
       this.runInAngular(() => {
 
@@ -1358,8 +1395,6 @@ export class ProductsComponent implements OnInit {
         this.getSafeErrorDetails(error),
 
       );
-
-
 
       const fallback = this.savePhase === 'uploadingImage'
 
@@ -1403,8 +1438,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   onProductImageSelected(event: Event): void {
 
     this.imageError = null;
@@ -1415,11 +1448,7 @@ export class ProductsComponent implements OnInit {
 
     input.value = '';
 
-
-
     if (files.length === 0) return;
-
-
 
     if (!this.canAddProductImage) {
 
@@ -1428,8 +1457,6 @@ export class ProductsComponent implements OnInit {
       return;
 
     }
-
-
 
     const acceptedFiles: File[] = [];
 
@@ -1457,8 +1484,6 @@ export class ProductsComponent implements OnInit {
 
     }
 
-
-
     for (const file of acceptedFiles) {
 
       this.selectedImages.push(file);
@@ -1468,8 +1493,6 @@ export class ProductsComponent implements OnInit {
     }
 
   }
-
-
 
   removeExistingProductImage(index: number): void {
 
@@ -1485,8 +1508,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   removeSelectedProductImage(index: number): void {
 
     const [previewUrl] = this.selectedImagePreviewUrls.splice(index, 1);
@@ -1498,8 +1519,6 @@ export class ProductsComponent implements OnInit {
     this.imageError = null;
 
   }
-
-
 
   private getProductImageUrls(item: CatalogItem): string[] {
 
@@ -1515,15 +1534,11 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   addProductSize(): void {
 
     this.productSizes.push(this.createProductSizeGroup());
 
   }
-
-
 
   removeProductSize(index: number): void {
 
@@ -1531,21 +1546,23 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   addInclude(): void {
+
     if (this.includes.length >= 3) {
+
       return;
+
     }
 
     this.includes.push(this.formBuilder.control(''));
+
   }
 
   onSortOrderInput(): void {
+
     this.reportDuplicateOrder();
+
   }
-
-
 
   removeInclude(index: number): void {
 
@@ -1553,17 +1570,11 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
-
-
   openCreateCategory(): void {
 
     this.clearFeedback();
 
     this.editingCategoryId = null;
-
-
 
     this.categoryForm.reset({
 
@@ -1575,21 +1586,15 @@ export class ProductsComponent implements OnInit {
 
     });
 
-
-
     this.categoryModalOpen = true;
 
   }
-
-
 
   openEditCategory(category: Category): void {
 
     this.clearFeedback();
 
     this.editingCategoryId = category.id;
-
-
 
     this.categoryForm.reset({
 
@@ -1601,13 +1606,9 @@ export class ProductsComponent implements OnInit {
 
     });
 
-
-
     this.categoryModalOpen = true;
 
   }
-
-
 
   async saveCategory(): Promise<void> {
 
@@ -1619,11 +1620,7 @@ export class ProductsComponent implements OnInit {
 
     }
 
-
-
     const value = this.categoryForm.getRawValue();
-
-
 
     const category: CategoryInput = {
 
@@ -1637,21 +1634,15 @@ export class ProductsComponent implements OnInit {
 
     };
 
-
-
     this.savingCategory = true;
 
     this.clearFeedback();
-
-
 
     try {
 
       if (this.editingCategoryId) {
 
         const categoryId = this.editingCategoryId;
-
-
 
         await this.categoryService.updateCategory(
 
@@ -1660,8 +1651,6 @@ export class ProductsComponent implements OnInit {
           category,
 
         );
-
-
 
         this.runInAngular(() => {
 
@@ -1679,8 +1668,6 @@ export class ProductsComponent implements OnInit {
 
             .sort((first, second) => first.sortOrder - second.sortOrder);
 
-
-
           this.successMessage = 'Categoría actualizada correctamente.';
 
         });
@@ -1697,8 +1684,6 @@ export class ProductsComponent implements OnInit {
 
           await this.categoryService.createCategory(category);
 
-
-
         this.runInAngular(() => {
 
           this.categories = [
@@ -1709,8 +1694,6 @@ export class ProductsComponent implements OnInit {
 
           ].sort((first, second) => first.sortOrder - second.sortOrder);
 
-
-
           this.successMessage = 'Categoría creada correctamente.';
 
         });
@@ -1718,8 +1701,6 @@ export class ProductsComponent implements OnInit {
         this.notificationService.success('¡Categoría creada correctamente!');
 
       }
-
-
 
       this.runInAngular(() => {
 
@@ -1736,8 +1717,6 @@ export class ProductsComponent implements OnInit {
         error,
 
       );
-
-
 
       this.runInAngular(() => {
 
@@ -1775,8 +1754,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   openCreateDeliveryZone(): void {
 
     this.clearFeedback();
@@ -1799,8 +1776,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   openEditDeliveryZone(zone: DeliveryZone): void {
 
     this.clearFeedback();
@@ -1808,20 +1783,15 @@ export class ProductsComponent implements OnInit {
     this.editingDeliveryZoneId = zone.id;
 
     this.deliveryZoneForm.reset({
-
-      name: zone.name,
-
-      status: zone.status,
-
-      sortOrder: zone.sortOrder,
-
+      name: zone.zoneName ?? zone.name ?? '',
+      description: zone.description ?? '',
+      status: zone.status ?? (zone.isActive === false ? 'inactive' : 'active'),
+      sortOrder: Number(zone.sortOrder ?? 0),
     });
 
     this.deliveryZoneModalOpen = true;
 
   }
-
-
 
   closeDeliveryZoneModal(): void {
 
@@ -1845,121 +1815,131 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   async saveDeliveryZone(): Promise<void> {
-
     if (this.deliveryZoneForm.invalid || this.savingDeliveryZone) {
-
       this.deliveryZoneForm.markAllAsTouched();
-
       return;
-
     }
 
-
-
     const value = this.deliveryZoneForm.getRawValue();
+    const zoneName = value.name.trim();
+    const sortOrder = Number(value.sortOrder);
 
+    if (!zoneName || !Number.isInteger(sortOrder) || sortOrder < 0) {
+      this.errorMessage = 'Revisa el nombre y el orden de la zona de entrega.';
+      return;
+    }
+
+    const status = value.status;
     const input: DeliveryZoneInput = {
-
       catalogId: this.catalogId,
-
-      name: value.name.trim(),
-
-      status: value.status,
-
-      sortOrder: value.sortOrder,
-
+      zoneName,
+      name: zoneName,
+      description: value.description.trim(),
+      status,
+      isActive: status === 'active',
+      sortOrder,
     };
 
-
-
     this.savingDeliveryZone = true;
-
     this.clearFeedback();
 
-
-
     try {
-
       if (this.editingDeliveryZoneId) {
-
         const id = this.editingDeliveryZoneId;
-
         await this.deliveryZoneService.updateDeliveryZone(id, input);
 
         this.runInAngular(() => {
-
           this.deliveryZones = this.deliveryZones
-
-            .map((zone) => zone.id === id ? { ...zone, ...input } : zone)
-
-            .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'es'));
-
+            .map((zone) =>
+              zone.id === id
+                ? {
+                    ...zone,
+                    ...input,
+                    id,
+                    zoneName,
+                    name: zoneName,
+                    description: input.description,
+                    status,
+                    isActive: status === 'active',
+                    sortOrder,
+                  }
+                : zone,
+            )
+            .sort(
+              (a, b) =>
+                a.sortOrder - b.sortOrder ||
+                (a.zoneName ?? a.name ?? '').localeCompare(
+                  b.zoneName ?? b.name ?? '',
+                  'es',
+                ),
+            );
           this.successMessage = 'Zona de entrega actualizada correctamente.';
-
         });
 
-        this.notificationService.success('Zona de entrega actualizada correctamente.');
-
+        this.notificationService.success(
+          'Zona de entrega actualizada correctamente.',
+        );
       } else {
-
         const id = await this.deliveryZoneService.createDeliveryZone(input);
 
         this.runInAngular(() => {
+          const newZone: DeliveryZone = {
+            id,
+            ...input,
+            zoneName,
+            name: zoneName,
+            description: input.description,
+            status,
+            isActive: status === 'active',
+            sortOrder,
+          };
 
-          this.deliveryZones = [...this.deliveryZones, { id, ...input }]
-
-            .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'es'));
-
+          this.deliveryZones = [...this.deliveryZones, newZone].sort(
+            (a, b) =>
+              a.sortOrder - b.sortOrder ||
+              (a.zoneName ?? a.name ?? '').localeCompare(
+                b.zoneName ?? b.name ?? '',
+                'es',
+              ),
+          );
           this.successMessage = 'Zona de entrega creada correctamente.';
-
         });
 
-        this.notificationService.success('Zona de entrega creada correctamente.');
-
+        this.notificationService.success(
+          'Zona de entrega creada correctamente.',
+        );
       }
 
-
-
       this.runInAngular(() => {
-
         this.deliveryZoneModalOpen = false;
-
         this.editingDeliveryZoneId = null;
-
       });
-
     } catch (error) {
-
-      console.error('[CatalogPage] No fue posible guardar la zona de entrega:', error);
+      console.error(
+        '[Products] No fue posible guardar la zona de entrega:',
+        error,
+      );
 
       this.runInAngular(() => {
-
-        this.errorMessage = this.getErrorMessage(error, 'No fue posible guardar la zona de entrega.');
-
+        this.errorMessage = this.getErrorMessage(
+          error,
+          'No fue posible guardar la zona de entrega.',
+        );
       });
 
       this.notificationService.error(
-
-        this.getSafeNotificationError(error, 'No fue posible guardar la zona de entrega.'),
-
+        this.getSafeNotificationError(
+          error,
+          'No fue posible guardar la zona de entrega.',
+        ),
       );
-
     } finally {
-
       this.runInAngular(() => {
-
         this.savingDeliveryZone = false;
-
       });
-
     }
-
   }
-
-
 
   requestDeliveryZoneDeletion(zone: DeliveryZone): void {
 
@@ -1975,8 +1955,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   requestItemDeletion(item: CatalogItem): void {
 
     this.pendingDeletion = {
@@ -1990,8 +1968,6 @@ export class ProductsComponent implements OnInit {
     };
 
   }
-
-
 
   requestCategoryDeletion(category: Category): void {
 
@@ -2007,13 +1983,9 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   async confirmDeletion(): Promise<void> {
 
     const deletion = this.pendingDeletion;
-
-
 
     if (!deletion || this.deleting) {
 
@@ -2021,13 +1993,9 @@ export class ProductsComponent implements OnInit {
 
     }
 
-
-
     this.deleting = true;
 
     this.clearFeedback();
-
-
 
     try {
 
@@ -2039,8 +2007,6 @@ export class ProductsComponent implements OnInit {
 
         );
 
-
-
         await this.catalogService.deleteItem(
 
           this.catalogId,
@@ -2049,8 +2015,6 @@ export class ProductsComponent implements OnInit {
 
         );
 
-
-
         this.runInAngular(() => {
 
           this.items = this.items.filter(
@@ -2058,8 +2022,6 @@ export class ProductsComponent implements OnInit {
             (item) => item.id !== deletion.id,
 
           );
-
-
 
           this.successMessage = 'Producto eliminado correctamente.';
 
@@ -2105,8 +2067,6 @@ export class ProductsComponent implements OnInit {
 
         await this.categoryService.deleteCategory(deletion.id);
 
-
-
         this.runInAngular(() => {
 
           this.categories = this.categories.filter(
@@ -2133,8 +2093,6 @@ export class ProductsComponent implements OnInit {
 
 );
 
-
-
         this.runInAngular(() => {
 
           this.deliveryZones = this.deliveryZones.filter((zone) => zone.id !== deletion.id);
@@ -2146,8 +2104,6 @@ export class ProductsComponent implements OnInit {
         this.notificationService.success('Zona de entrega eliminada correctamente.');
 
       }
-
-
 
       this.runInAngular(() => {
 
@@ -2164,8 +2120,6 @@ export class ProductsComponent implements OnInit {
         error,
 
       );
-
-
 
       this.runInAngular(() => {
 
@@ -2211,8 +2165,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   categoryName(categoryId?: string): string {
 
     if (!categoryId) {
@@ -2220,8 +2172,6 @@ export class ProductsComponent implements OnInit {
       return 'Sin categoría';
 
     }
-
-
 
     return (
 
@@ -2232,8 +2182,6 @@ export class ProductsComponent implements OnInit {
     );
 
   }
-
-
 
   closeItemModal(): void {
 
@@ -2249,8 +2197,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   closeCategoryModal(): void {
 
     if (!this.savingCategory) {
@@ -2261,8 +2207,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   private clearFeedback(): void {
 
     this.errorMessage = null;
@@ -2271,8 +2215,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   private getErrorMessage(error: unknown, fallback: string): string {
 
     if (!(error instanceof Error)) {
@@ -2280,8 +2222,6 @@ export class ProductsComponent implements OnInit {
       return fallback;
 
     }
-
-
 
     const code =
 
@@ -2299,13 +2239,9 @@ export class ProductsComponent implements OnInit {
 
     );
 
-
-
     return code ? `${fallback} [${code}]: ${message}` : message || fallback;
 
   }
-
-
 
   private getSafeNotificationError(error: unknown, fallback: string): string {
 
@@ -2361,13 +2297,9 @@ export class ProductsComponent implements OnInit {
 
     };
 
-
-
     return code ? safeMessages[code] ?? fallback : fallback;
 
   }
-
-
 
   private getSafeErrorDetails(error: unknown): {
 
@@ -2395,8 +2327,6 @@ export class ProductsComponent implements OnInit {
 
       error instanceof Error ? error.message : String(error);
 
-
-
     return {
 
       code,
@@ -2413,8 +2343,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   private releaseImagePreviews(): void {
 
     for (const previewUrl of this.selectedImagePreviewUrls) {
@@ -2427,8 +2355,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   private clearSelectedImages(): void {
 
     this.selectedImages = [];
@@ -2438,25 +2364,34 @@ export class ProductsComponent implements OnInit {
   }
 
   private reportDuplicateOrder(): void {
+
     const sortOrderControl = this.itemForm.controls.sortOrder;
 
     if (!sortOrderControl.hasError('duplicateOrder')) {
+
       this.lastReportedDuplicateOrder = null;
+
       return;
+
     }
 
     sortOrderControl.markAsTouched();
+
     const duplicateOrder = Number(sortOrderControl.value);
 
     if (this.lastReportedDuplicateOrder !== duplicateOrder) {
+
       this.lastReportedDuplicateOrder = duplicateOrder;
+
       this.notificationService.error(
+
         `El orden ${duplicateOrder} ya está asignado a otro producto.`,
+
       );
+
     }
+
   }
-
-
 
   private createProductSizeGroup(
 
@@ -2484,8 +2419,6 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   private clearCommercialControls(): void {
 
     this.productSizes.clear();
@@ -2493,8 +2426,6 @@ export class ProductsComponent implements OnInit {
     this.includes.clear();
 
   }
-
-
 
   private setCommercialControls(
 
@@ -2511,7 +2442,9 @@ export class ProductsComponent implements OnInit {
     }
 
     const normalizedIncludes = normalizeCatalogIncludes(
+
       commercialData?.includes,
+
     );
 
     for (const include of normalizedIncludes) {
@@ -2521,8 +2454,6 @@ export class ProductsComponent implements OnInit {
     }
 
   }
-
-
 
   private buildCommercialData(fields: {
 
@@ -2547,8 +2478,6 @@ export class ProductsComponent implements OnInit {
   }): CatalogProductCommercialData {
 
     const current = this.editingCommercialData;
-
-
 
     return {
 
@@ -2604,11 +2533,10 @@ export class ProductsComponent implements OnInit {
 
   }
 
-
-
   /* Genera un código automático para el producto. Se conserva al editarlo. */
 
   private generateProductCode(): string {
+
     const now = new Date();
 
     const date = [
@@ -2629,12 +2557,9 @@ export class ProductsComponent implements OnInit {
 
         : Math.random().toString(36).slice(2, 8).toUpperCase();
 
-
-
     return `CDF-${date}-${randomPart}`;
+
   }
-
-
 
   private nextCommercialId(): number {
 
@@ -2649,8 +2574,6 @@ export class ProductsComponent implements OnInit {
     ) + 1;
 
   }
-
-
 
   private async cleanupFailedUploads(
 
@@ -2689,7 +2612,5 @@ export class ProductsComponent implements OnInit {
     }
 
   }
-
-
 
 }

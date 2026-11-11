@@ -76,7 +76,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     },
     {
       name: 'Entregas y Envíos',
-      path: '/profile',
+      path: '/catalog/delivery-zones',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h11v12H3zM14 10h4l3 3v5h-7z"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="17.5" cy="18.5" r="1.5"/></svg>`,
     },
     {
@@ -256,6 +256,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       '/catalog/categories': 'Categorías',
       '/catalog/social-networks': 'Redes Sociales',
       '/catalog/contact': 'Contacto',
+      '/catalog/delivery-zones': 'Entregas y Envíos',
     };
 
     this.activeMenuItem = routeMenuMap[cleanUrl] ?? null;

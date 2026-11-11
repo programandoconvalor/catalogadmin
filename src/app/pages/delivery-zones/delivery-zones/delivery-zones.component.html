@@ -1,0 +1,544 @@
+
+<div class="delivery-page">
+  @if (errorMessage) {
+    <div role="alert" class="delivery-error">
+      <span>{{ errorMessage }}</span>
+      <button type="button" (click)="loadZones()">Reintentar</button>
+    </div>
+  }
+
+  <section class="delivery-page-card">
+    <header class="delivery-page-header">
+      <div class="delivery-heading">
+        <span class="delivery-heading-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M3 6h11v11H3z" />
+            <path d="M14 10h4l3 3v4h-7z" />
+            <circle cx="7.5" cy="18" r="2" />
+            <circle cx="17.5" cy="18" r="2" />
+          </svg>
+        </span>
+        <div>
+          <h2>Entregas y Envíos</h2>
+          <p>Administra las zonas donde tu florería realiza entregas.</p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="delivery-primary-button"
+        (click)="openCreateZone()"
+        [disabled]="!canCreateZone"
+        [title]="!canCreateZone ? 'Ya alcanzaste el máximo de 5 zonas' : 'Agregar zona'"
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M10 4v12m6-6H4" />
+        </svg>
+        Nueva zona
+      </button>
+    </header>
+
+    <section class="delivery-summary" aria-label="Resumen de zonas">
+      <div class="delivery-summary-item">
+        <span class="delivery-summary-icon total">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M3 6h11v11H3z" />
+            <path d="M14 10h4l3 3v4h-7z" />
+            <circle cx="7.5" cy="18" r="2" />
+            <circle cx="17.5" cy="18" r="2" />
+          </svg>
+        </span>
+        <div>
+          <strong>{{ zones.length }}/{{ maximumZones }}</strong>
+          <span>Zonas registradas</span>
+        </div>
+      </div>
+
+      <div class="delivery-summary-item">
+        <span class="delivery-summary-icon active">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="m5 12 4 4L19 6" />
+          </svg>
+        </span>
+        <div>
+          <strong>{{ activeZonesCount }}</strong>
+          <span>Zonas activas</span>
+        </div>
+      </div>
+
+      <div class="delivery-summary-item">
+        <span class="delivery-summary-icon inactive">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </span>
+        <div>
+          <strong>{{ inactiveZonesCount }}</strong>
+          <span>Zonas inactivas</span>
+        </div>
+      </div>
+
+      <div class="delivery-limit">
+        <div class="delivery-limit-copy">
+          <span>Capacidad de zonas</span>
+          <strong>{{ zones.length }} de {{ maximumZones }}</strong>
+        </div>
+        <div class="delivery-limit-track">
+          <span [style.width.%]="(zones.length / maximumZones) * 100"></span>
+        </div>
+      </div>
+    </section>
+
+    <section
+      class="delivery-toolbar"
+      role="search"
+      aria-label="Filtros de zonas de entrega"
+    >
+      <label class="delivery-search-field">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-4-4" />
+        </svg>
+        <input
+          type="search"
+          [value]="searchTerm"
+          (input)="onSearchChange($any($event.target).value)"
+          placeholder="Buscar zona..."
+          aria-label="Buscar zona por nombre"
+        />
+      </label>
+
+      <select
+        class="delivery-toolbar-select"
+        aria-label="Filtrar por estado"
+        [value]="statusFilter"
+        (change)="onStatusFilterChange($any($event.target).value)"
+      >
+        <option value="">Todos los estados</option>
+        <option value="active">Activas</option>
+        <option value="inactive">Inactivas</option>
+      </select>
+
+      <select
+        class="delivery-toolbar-select"
+        aria-label="Ordenar zonas"
+        [value]="sortBy"
+        (change)="onSortChange($any($event.target).value)"
+      >
+        <option value="order">Orden personalizado</option>
+        <option value="name">Nombre</option>
+      </select>
+
+      <button
+        type="button"
+        class="delivery-sort-direction"
+        (click)="toggleSortDirection()"
+        [attr.aria-label]="sortDirection === 'asc' ? 'Cambiar a descendente' : 'Cambiar a ascendente'"
+        [title]="sortDirection === 'asc' ? 'Ascendente' : 'Descendente'"
+      >
+        <svg
+          viewBox="0 0 20 20"
+          aria-hidden="true"
+          [class.is-desc]="sortDirection === 'desc'"
+        >
+          <path d="M10 3v14m0 0 5-5m-5 5-5-5" />
+        </svg>
+      </button>
+    </section>
+
+    @if (loading && zones.length === 0) {
+      <div class="delivery-state" role="status">
+        <span class="delivery-spinner"></span>
+        <p>Cargando zonas de entrega...</p>
+      </div>
+    } @else if (filteredZones.length === 0) {
+      <div class="delivery-state">
+        <span class="delivery-empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M3 6h11v11H3z" />
+            <path d="M14 10h4l3 3v4h-7z" />
+            <circle cx="7.5" cy="18" r="2" />
+            <circle cx="17.5" cy="18" r="2" />
+          </svg>
+        </span>
+
+        <h3>
+          {{ hasActiveFilters ? 'No encontramos zonas' : 'Todavía no hay zonas de entrega' }}
+        </h3>
+        <p>
+          {{
+            hasActiveFilters
+              ? 'No hay resultados con los filtros actuales. Prueba con otros criterios.'
+              : 'Agrega las zonas donde tu florería puede entregar pedidos.'
+          }}
+        </p>
+
+        @if (!hasActiveFilters && canCreateZone) {
+          <button
+            type="button"
+            class="delivery-primary-button"
+            (click)="openCreateZone()"
+          >
+            Crear primera zona
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="delivery-table-wrap">
+        <table class="delivery-table">
+          <thead>
+            <tr>
+              <th>Zona de entrega</th>
+              <th>Costo de envío</th>
+              <th>Tiempo estimado</th>
+              <th>Orden</th>
+              <th>Estado</th>
+              <th class="actions-heading">Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (zone of paginatedZones; track zone.id) {
+              <tr>
+                <td>
+                  <div class="delivery-name-cell">
+                    <span class="delivery-row-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+                        <circle cx="12" cy="10" r="2.5" />
+                      </svg>
+                    </span>
+                    <span>
+                      <strong>{{ zone.zoneName }}</strong>
+                      <small>Zona de cobertura</small>
+                    </span>
+                  </div>
+                </td>
+
+                <td>
+                  <span class="delivery-cost">
+                    {{ formatShippingCost(zone.shippingCost) }}
+                  </span>
+                </td>
+
+                <td>
+                  <span class="delivery-time">
+                    {{ zone.deliveryTime || 'Por definir' }}
+                  </span>
+                </td>
+
+                <td>
+                  <span class="delivery-order">{{ zone.sortOrder }}</span>
+                </td>
+
+                <td>
+                  <span
+                    class="delivery-status"
+                    [class.is-active]="zone.isActive"
+                    [class.is-inactive]="!zone.isActive"
+                  >
+                    <span></span>
+                    {{ zone.isActive ? 'Activa' : 'Inactiva' }}
+                  </span>
+                </td>
+
+                <td>
+                  <div class="delivery-actions">
+                    <button
+                      type="button"
+                      class="delivery-row-action edit"
+                      (click)="openEditZone(zone)"
+                      [attr.aria-label]="'Editar zona ' + zone.zoneName"
+                      title="Editar"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none">
+                        <path d="m12.8 3.5 3.7 3.7M4 16l3.3-.7L16 6.6a1.8 1.8 0 0 0-2.6-2.6l-9 8.7L4 16Z" />
+                      </svg>
+                      <span>Editar</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="delivery-row-action status"
+                      (click)="toggleStatus(zone)"
+                      [attr.aria-label]="(zone.isActive ? 'Desactivar ' : 'Activar ') + zone.zoneName"
+                      [title]="zone.isActive ? 'Desactivar' : 'Activar'"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none">
+                        @if (zone.isActive) {
+                          <path d="M10 3v7m-4.5-4.5a7 7 0 1 0 9 0" />
+                        } @else {
+                          <path d="m4 10 4 4 8-8" />
+                        }
+                      </svg>
+                      <span>{{ zone.isActive ? 'Desactivar' : 'Activar' }}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="delivery-row-action delete"
+                      (click)="requestDeletion(zone)"
+                      [attr.aria-label]="'Eliminar zona ' + zone.zoneName"
+                      title="Eliminar"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none">
+                        <path d="M3.5 5.5h13M8 5.5V3.8h4v1.7m-6.5 0 .8 10.7h7.4l.8-10.7M8.2 8.5v5m3.6-5v5" />
+                      </svg>
+                      <span>Eliminar</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="delivery-pagination">
+        <div class="delivery-pagination-info">
+          Mostrando <strong>{{ firstVisibleItem }}–{{ lastVisibleItem }}</strong>
+          de <strong>{{ filteredZones.length }}</strong> zonas
+        </div>
+
+        <div class="delivery-pagination-controls">
+          <label>
+            Mostrar
+            <select
+              [value]="pageSize"
+              (change)="onPageSizeChange($any($event.target).value)"
+              aria-label="Cantidad por página"
+            >
+              @for (size of pageSizeOptions; track size) {
+                <option [value]="size">{{ size }}</option>
+              }
+            </select>
+          </label>
+
+          <button
+            type="button"
+            class="delivery-page-button"
+            (click)="goToPage(currentPage - 1)"
+            [disabled]="currentPage <= 1"
+          >
+            Anterior
+          </button>
+
+          <span class="delivery-page-number">
+            {{ currentPage }} / {{ totalPages }}
+          </span>
+
+          <button
+            type="button"
+            class="delivery-page-button"
+            (click)="goToPage(currentPage + 1)"
+            [disabled]="currentPage >= totalPages"
+          >
+            Siguiente
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+</div>
+
+<app-modal
+  [isOpen]="modalOpen"
+  [showCloseButton]="!saving"
+  position="center"
+  backdropClassName="bg-gray-950/55 backdrop-blur-[2px]"
+  className="delivery-dialog max-w-[560px] p-0"
+  (close)="closeModal()"
+>
+  <form
+    [formGroup]="zoneForm"
+    (ngSubmit)="saveZone()"
+    class="delivery-form"
+  >
+    <header class="delivery-form-header">
+      <div>
+        <span class="delivery-eyebrow">ENTREGAS Y ENVÍOS</span>
+        <h2>{{ editingZoneId ? 'Editar zona' : 'Nueva zona de entrega' }}</h2>
+        <p>
+          {{
+            editingZoneId
+              ? 'Actualiza la información de esta zona.'
+              : 'Completa los datos para agregar una zona de cobertura.'
+          }}
+        </p>
+      </div>
+    </header>
+
+    <div class="delivery-form-fields">
+      <label class="delivery-input-group">
+        <span>Nombre de la zona <b>*</b></span>
+        <input
+          type="text"
+          formControlName="zoneName"
+          maxlength="100"
+          placeholder="Ej. San Mateo Atenco"
+          autocomplete="off"
+        />
+        <small>Nombre que identificarán tus clientes.</small>
+        @if (zoneForm.controls.zoneName.touched && zoneForm.controls.zoneName.invalid) {
+          <em>El nombre de la zona es obligatorio y debe tener máximo 100 caracteres.</em>
+        }
+      </label>
+
+      <div class="delivery-form-grid">
+        <label class="delivery-input-group">
+          <span>Costo de envío <small>(opcional)</small></span>
+          <div class="delivery-input-prefix">
+            <span>$</span>
+            <input
+              type="number"
+              formControlName="shippingCost"
+              min="0"
+              step="0.01"
+              placeholder="Ej. 50.00"
+            />
+          </div>
+          <small>Deja vacío si el costo está por definir. Usa 0 para envío gratis.</small>
+          @if (zoneForm.controls.shippingCost.touched && zoneForm.controls.shippingCost.invalid) {
+            <em>El costo debe ser mayor o igual a cero.</em>
+          }
+        </label>
+
+        <label class="delivery-input-group">
+          <span>Tiempo de entrega <small>(opcional)</small></span>
+          <input
+            type="text"
+            formControlName="deliveryTime"
+            maxlength="100"
+            placeholder="Ej. 24 horas"
+          />
+          <small>Ej. Mismo día, 24–48 horas.</small>
+          @if (zoneForm.controls.deliveryTime.touched && zoneForm.controls.deliveryTime.invalid) {
+            <em>Máximo 100 caracteres.</em>
+          }
+        </label>
+      </div>
+
+      <label class="delivery-input-group">
+        <span>Orden de aparición <b>*</b></span>
+        <input
+          type="number"
+          formControlName="sortOrder"
+          min="1"
+          step="1"
+          (input)="onSortOrderInput()"
+        />
+        <small>Define la posición de esta zona en el catálogo público.</small>
+
+        @if (zoneForm.controls.sortOrder.touched && zoneForm.controls.sortOrder.invalid) {
+          @if (zoneForm.controls.sortOrder.hasError('duplicateOrder')) {
+            <em>Este orden ya está asignado a otra zona.</em>
+          } @else if (zoneForm.controls.sortOrder.hasError('wholeNumber')) {
+            <em>El orden debe ser un número entero.</em>
+          } @else {
+            <em>Ingresa un orden válido mayor o igual a 1.</em>
+          }
+        }
+      </label>
+
+      <div class="delivery-status-field">
+        <div>
+          <span>Estado de la zona</span>
+          <strong>
+            {{ zoneForm.controls.isActive.value ? 'Activa' : 'Inactiva' }}
+          </strong>
+          <small>
+            {{
+              zoneForm.controls.isActive.value
+                ? 'La zona estará disponible para tus clientes.'
+                : 'La zona no aparecerá disponible en el catálogo.'
+            }}
+          </small>
+        </div>
+
+        <label class="delivery-switch">
+          <input
+            type="checkbox"
+            role="switch"
+            [checked]="zoneForm.controls.isActive.value"
+            (change)="toggleZoneStatus()"
+          />
+          <span class="delivery-switch-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <footer class="delivery-form-footer">
+      <button
+        type="button"
+        class="delivery-cancel-button"
+        (click)="closeModal()"
+        [disabled]="saving"
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="submit"
+        class="delivery-save-button"
+        [disabled]="zoneForm.invalid || saving"
+      >
+        {{
+          saving
+            ? 'Guardando...'
+            : editingZoneId
+              ? 'Guardar cambios'
+              : 'Crear zona'
+        }}
+      </button>
+    </footer>
+  </form>
+</app-modal>
+
+<app-modal
+  [isOpen]="pendingDeletion !== null"
+  [showCloseButton]="!deleting"
+  position="center"
+  backdropClassName="bg-gray-950/55 backdrop-blur-[2px]"
+  className="delivery-dialog max-w-[500px] p-0"
+  (close)="pendingDeletion = null"
+>
+  <section class="delivery-form">
+    <header class="delivery-form-header">
+      <div>
+        <span class="delivery-eyebrow">CONFIRMACIÓN</span>
+        <h2>Eliminar zona de entrega</h2>
+        <p>Esta acción no se puede deshacer.</p>
+      </div>
+    </header>
+
+    <div class="delivery-form-fields">
+      <div class="delivery-delete-warning">
+        <p>
+          ¿Estás seguro de eliminar
+          <strong>{{ pendingDeletion?.zoneName }}</strong>?
+        </p>
+        <p>La zona dejará de estar disponible en tu administración y catálogo.</p>
+      </div>
+    </div>
+
+    <footer class="delivery-form-footer">
+      <button
+        type="button"
+        class="delivery-cancel-button"
+        (click)="pendingDeletion = null"
+        [disabled]="deleting"
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        class="delivery-delete-button"
+        (click)="confirmDeletion()"
+        [disabled]="deleting"
+      >
+        {{ deleting ? 'Eliminando...' : 'Sí, eliminar' }}
+      </button>
+    </footer>
+  </section>
+</app-modal>
