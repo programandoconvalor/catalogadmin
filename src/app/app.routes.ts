@@ -2,7 +2,6 @@
 import { Routes } from '@angular/router';
 
 import { EcommerceComponent } from './pages/dashboard/ecommerce/ecommerce.component';
-import { ProfileComponent } from './pages/profile/profile.component';
 import { FormElementsComponent } from './pages/forms/form-elements/form-elements.component';
 import { BasicTablesComponent } from './pages/tables/basic-tables/basic-tables.component';
 import { BlankComponent } from './pages/blank/blank.component';
@@ -21,12 +20,12 @@ import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { ResetPasswordComponent } from './pages/auth-pages/reset-password/reset-password.component';
 import { CalenderComponent } from './pages/calender/calender.component';
+
 import { CatalogPageComponent } from './pages/catalog/catalog-page.component';
 import { ProductsComponent } from './pages/products/products.component';
-
-// NUEVO: Categorías
 import { CategoriesComponent } from './pages/categories/categories.component';
 import { SocialNetworksComponent } from './pages/social-networks/social-networks.component';
+import { BrandingComponent } from './pages/branding/branding.component';
 
 import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
@@ -41,7 +40,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       // =====================================================
-      // CATALOGS
+      // CATALOG
       // =====================================================
       {
         path: 'catalog',
@@ -65,6 +64,20 @@ export const routes: Routes = [
       },
 
       // =====================================================
+      // BRANDING / PROFILE
+      // =====================================================
+      {
+         path: 'catalog/branding',
+        component: BrandingComponent,
+        title: 'Logo y Nombre',
+      },
+      {
+        path: 'catalog/branding',
+        component: BrandingComponent,
+        title: 'Logo y Nombre',
+      },
+
+      // =====================================================
       // DASHBOARD
       // =====================================================
       {
@@ -77,11 +90,6 @@ export const routes: Routes = [
         path: 'calendar',
         component: CalenderComponent,
         title: 'Calendario',
-      },
-      {
-        path: 'profile',
-        component: ProfileComponent,
-        title: 'Perfil',
       },
       {
         path: 'form-elements',

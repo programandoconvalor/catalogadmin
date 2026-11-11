@@ -8,13 +8,21 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { NavigationEnd, Router, RouterModule } from '@angular/router';
+
+import {
+  NavigationEnd,
+  Router,
+  RouterModule,
+} from '@angular/router';
+
 import { combineLatest, Subscription } from 'rxjs';
 
 import { SafeHtmlPipe } from '../../pipe/safe-html.pipe';
 import { SidebarService } from '../../services/sidebar.service';
 import { SidebarWidgetComponent } from './app-sidebar-widget.component';
+
 import { TenantContextService } from '../../../core/tenant/tenant-context.service';
+import { BrandingIdentityService } from '../../../core/branding/branding-identity.service';
 
 type NavItem = {
   name: string;
@@ -24,6 +32,7 @@ type NavItem = {
 
 @Component({
   selector: 'app-sidebar',
+  standalone: true,
   imports: [
     CommonModule,
     RouterModule,
@@ -36,14 +45,13 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
   /**
    * Navegación principal.
    *
-   * IMPORTANTE:
    * Todos los elementos son enlaces independientes.
    * No se utilizan subItems ni menús desplegables.
    */
   readonly navItems: NavItem[] = [
     {
       name: 'Logo y Nombre',
-      path: '/profile',
+      path: '/catalog/branding',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>`,
     },
     {
@@ -103,21 +111,42 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private tenantContextService: TenantContextService,
+    private brandingService: BrandingIdentityService,
   ) {
     this.isExpanded$ = this.sidebarService.isExpanded$;
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
     this.isHovered$ = this.sidebarService.isHovered$;
   }
 
-  readonly tenantName = computed(
-    () =>
-      this.tenantContextService.context$()?.tenant.name.trim() ||
-      'Florería',
-  );
+  /**
+   * Nombre de la florería.
+   *
+   * Prioriza storeName de branding/identity.
+   * El nombre del tenant queda como respaldo.
+   */
+  readonly tenantName = computed(() => {
+    const storeName = this.brandingService.identity()
+      ?.storeName
+      ?.trim();
 
+    const tenantName = this.tenantContextService.context$()
+      ?.tenant
+      ?.name
+      ?.trim();
+
+    return storeName || tenantName || 'Florería';
+  });
+
+  /**
+   * Logo de la florería desde branding/identity.
+   *
+   * Si no existe o falla la imagen, devuelve null
+   * para que el HTML muestre la flor predeterminada.
+   */
   readonly tenantLogoUrl = computed(() => {
-    const logoUrl =
-      this.tenantContextService.context$()?.tenant.logoUrl?.trim();
+    const logoUrl = this.brandingService.identity()
+      ?.logoUrl
+      ?.trim();
 
     return logoUrl && logoUrl !== this.failedTenantLogoUrl()
       ? logoUrl
@@ -125,6 +154,14 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    /**
+     * Carga la identidad si todavía no está disponible.
+     * Si otro componente ya la cargó, reutiliza la señal.
+     */
+    if (!this.brandingService.identity()) {
+      void this.loadBrandingIdentity();
+    }
+
     this.subscription.add(
       this.router.events.subscribe((event) => {
         if (event instanceof NavigationEnd) {
@@ -148,6 +185,20 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     this.setActiveMenuFromRoute(this.router.url);
   }
 
+  /**
+   * Carga la identidad del tenant activo.
+   */
+  private async loadBrandingIdentity(): Promise<void> {
+    try {
+      await this.brandingService.getIdentity();
+    } catch (error) {
+      console.error(
+        '[Sidebar] Error al cargar identidad de marca:',
+        error,
+      );
+    }
+  }
+
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
   }
@@ -160,8 +211,13 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     this.activeMenuItem = name;
   }
 
+  /**
+   * Si falla la imagen, se muestra el icono predeterminado.
+   */
   onTenantLogoError(): void {
-    const logoUrl = this.tenantContextService.tenant?.logoUrl?.trim();
+    const logoUrl = this.brandingService.identity()
+      ?.logoUrl
+      ?.trim();
 
     if (logoUrl) {
       this.failedTenantLogoUrl.set(logoUrl);
@@ -195,7 +251,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     const cleanUrl = currentUrl.split('?')[0].split('#')[0];
 
     const routeMenuMap: Record<string, string> = {
-      '/profile': 'Logo y Nombre',
+      '/catalog/branding': 'Logo y Nombre',
       '/catalog/products': 'Productos',
       '/catalog/categories': 'Categorías',
       '/catalog/social-networks': 'Redes Sociales',

@@ -5075,3 +5075,77 @@
     gap: 8px;
   }
 }
+
+/* =========================================
+   ESTADO DE PRODUCTOS - LISTADO
+   ========================================= */
+
+.products-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.products-status-dot {
+  display: inline-block;
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+/* Producto activo: fondo verde suave y contorno verde */
+.products-status-badge-active {
+  color: #047857;
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.products-status-badge-active .products-status-dot {
+  background-color: #10b981;
+}
+
+/* Producto agotado/inactivo: fondo gris suave y contorno gris */
+.products-status-badge-inactive {
+  color: #64748b;
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.products-status-badge-inactive .products-status-dot {
+  background-color: #94a3b8;
+}
+
+/* Modo oscuro */
+.dark .products-status-badge-active {
+  color: #6ee7b7;
+  background-color: rgba(6, 95, 70, 0.22);
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.dark .products-status-badge-active .products-status-dot {
+  background-color: #34d399;
+}
+
+.dark .products-status-badge-inactive {
+  color: #cbd5e1;
+  background-color: rgba(71, 85, 105, 0.25);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.dark .products-status-badge-inactive .products-status-dot {
+  background-color: #94a3b8;
+}

@@ -1,3 +1,4 @@
+
 import { Injectable, inject } from '@angular/core';
 import {
   deleteObject,
@@ -10,35 +11,33 @@ import { firebaseApp, storage } from '../firebase/firebase';
 import type { CatalogId } from '../models/catalog-item.model';
 import { TenantContextService } from '../tenant/tenant-context.service';
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_PRODUCT_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_LOGO_SIZE = 2 * 1024 * 1024;
+const MAX_FAVICON_SIZE = 1 * 1024 * 1024;
+
 const UPLOAD_TIMEOUT_MS = 90_000;
 const DOWNLOAD_URL_TIMEOUT_MS = 30_000;
+
 const ALLOWED_IMAGES: Record<string, string[]> = {
   'image/jpeg': ['jpg', 'jpeg'],
   'image/png': ['png'],
   'image/webp': ['webp'],
 };
-const MANAGED_IMAGE_PATH =
+
+const MANAGED_PRODUCT_IMAGE_PATH =
   /^tenants\/[^/]+\/normal\/products\/images\/[^/]+$/;
 
-export function getProductImageValidationError(file: File): string | null {
-  if (!ALLOWED_IMAGES[file.type]) {
-    return 'Solo se permiten imágenes JPG, PNG o WEBP.';
-  }
+const MANAGED_BRANDING_IMAGE_PATH =
+  /^tenants\/[^/]+\/branding\/(logo|favicon)\/[^/]+$/;
 
-  const extension = file.name.split('.').pop()?.toLocaleLowerCase();
-  if (!extension || !ALLOWED_IMAGES[file.type].includes(extension)) {
-    return 'Solo se permiten imágenes JPG, PNG o WEBP.';
-  }
-
-  if (file.size > MAX_IMAGE_SIZE) {
-    return 'La imagen no puede superar 5 MB.';
-  }
-
-  return null;
-}
+export type BrandingImageType = 'logo' | 'favicon';
 
 export interface UploadedProductImage {
+  downloadUrl: string;
+  fullPath: string;
+}
+
+export interface UploadedBrandingImage {
   downloadUrl: string;
   fullPath: string;
 }
@@ -49,11 +48,66 @@ export interface ProductImageUploadProgress {
   percent: number;
 }
 
+export type BrandingImageUploadProgress = ProductImageUploadProgress;
+
+export function getProductImageValidationError(
+  file: File,
+): string | null {
+  return getImageValidationError(file, MAX_PRODUCT_IMAGE_SIZE);
+}
+
+export function getBrandingImageValidationError(
+  file: File,
+  type: BrandingImageType,
+): string | null {
+  const maxSize =
+    type === 'logo' ? MAX_LOGO_SIZE : MAX_FAVICON_SIZE;
+
+  const validationError = getImageValidationError(file, maxSize);
+
+  if (validationError) {
+    if (file.size > maxSize) {
+      return type === 'logo'
+        ? 'El logo no puede superar 2 MB.'
+        : 'El favicon no puede superar 1 MB.';
+    }
+
+    return validationError;
+  }
+
+  return null;
+}
+
+function getImageValidationError(
+  file: File,
+  maxSize: number,
+): string | null {
+  if (!ALLOWED_IMAGES[file.type]) {
+    return 'Solo se permiten imágenes JPG, PNG o WEBP.';
+  }
+
+  const extension = file.name.split('.').pop()?.toLowerCase();
+
+  if (!extension || !ALLOWED_IMAGES[file.type].includes(extension)) {
+    return 'La extensión del archivo no coincide con su formato.';
+  }
+
+  if (file.size > maxSize) {
+    return 'El archivo supera el tamaño máximo permitido.';
+  }
+
+  return null;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class StorageService {
   private readonly tenantContext = inject(TenantContextService);
+
+  // =========================================
+  // PRODUCTOS
+  // =========================================
 
   async uploadProductImage(
     catalogId: CatalogId,
@@ -64,42 +118,152 @@ export class StorageService {
     this.validateCatalogId(catalogId);
 
     const validationError = getProductImageValidationError(file);
+
     if (validationError) {
       throw new Error(validationError);
     }
 
-    const tenantId = this.tenantContext.tenantId;
-    if (!tenantId?.trim()) {
-      throw new Error('No hay un tenant activo para subir la imagen.');
-    }
+    const tenantId = this.requireTenantId();
 
     const safeCode =
-      productCode.trim().replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '')
-      || 'product';
-    const extension = file.name.split('.').pop()?.toLocaleLowerCase() ?? 'jpg';
-    const uniqueSuffix =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      productCode
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'product';
+
+    const extension =
+      file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+
     const fullPath =
       `tenants/${tenantId}/${catalogId}/products/images/` +
-      `${safeCode}-${uniqueSuffix}.${extension}`;
-    const fileReference = ref(storage, fullPath);
+      `${safeCode}-${this.generateUniqueSuffix()}.${extension}`;
 
-    console.info('[StorageService] Inicia carga de imagen:', {
-      catalogId,
-      sizeBytes: file.size,
-      contentType: file.type,
-    });
-
-    const uploadTask = uploadBytesResumable(fileReference, file, {
-      contentType: file.type,
-      customMetadata: {
+    return this.uploadFile(
+      fullPath,
+      file,
+      {
         tenantId,
         catalogId,
         productCode: safeCode,
       },
-    });
+      onProgress,
+    );
+  }
+
+  async deleteProductImage(imageUrl: string): Promise<boolean> {
+    const fullPath = this.getManagedProductImagePath(imageUrl);
+
+    if (!fullPath) {
+      return false;
+    }
+
+    await this.deleteProductImageByPath(fullPath);
+
+    return true;
+  }
+
+  async deleteProductImageByPath(fullPath: string): Promise<void> {
+    if (!MANAGED_PRODUCT_IMAGE_PATH.test(fullPath)) {
+      throw new Error(
+        'La ruta de la imagen no pertenece al catálogo de productos.',
+      );
+    }
+
+    await deleteObject(ref(storage, fullPath));
+  }
+
+  // =========================================
+  // LOGO Y FAVICON
+  // =========================================
+
+  async uploadBrandingImage(
+    type: BrandingImageType,
+    file: File,
+    onProgress?: (progress: BrandingImageUploadProgress) => void,
+  ): Promise<UploadedBrandingImage> {
+    if (type !== 'logo' && type !== 'favicon') {
+      throw new Error('El tipo de imagen de identidad no es válido.');
+    }
+
+    const validationError = getBrandingImageValidationError(
+      file,
+      type,
+    );
+
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
+    const tenantId = this.requireTenantId();
+
+    const extension =
+      file.name.split('.').pop()?.toLowerCase() ?? 'png';
+
+    const fullPath =
+      `tenants/${tenantId}/branding/${type}/` +
+      `${type}-${this.generateUniqueSuffix()}.${extension}`;
+
+    return this.uploadFile(
+      fullPath,
+      file,
+      {
+        tenantId,
+        brandingType: type,
+      },
+      onProgress,
+    );
+  }
+
+  async deleteBrandingImage(imageUrl: string): Promise<boolean> {
+    const fullPath = this.getManagedBrandingImagePath(imageUrl);
+
+    if (!fullPath) {
+      return false;
+    }
+
+    await this.deleteBrandingImageByPath(fullPath);
+
+    return true;
+  }
+
+  async deleteBrandingImageByPath(fullPath: string): Promise<void> {
+    if (!MANAGED_BRANDING_IMAGE_PATH.test(fullPath)) {
+      throw new Error(
+        'La ruta no pertenece a las imágenes de identidad de la florería.',
+      );
+    }
+
+    const tenantId = this.requireTenantId();
+
+    if (!fullPath.startsWith(`tenants/${tenantId}/`)) {
+      throw new Error(
+        'No puedes eliminar archivos pertenecientes a otra florería.',
+      );
+    }
+
+    await deleteObject(ref(storage, fullPath));
+  }
+
+  // =========================================
+  // SUBIDA REUTILIZABLE
+  // =========================================
+
+  private async uploadFile(
+    fullPath: string,
+    file: File,
+    metadata: Record<string, string>,
+    onProgress?: (progress: ProductImageUploadProgress) => void,
+  ): Promise<UploadedProductImage> {
+    const fileReference = ref(storage, fullPath);
+
+    const uploadTask = uploadBytesResumable(
+      fileReference,
+      file,
+      {
+        contentType: file.type,
+        customMetadata: metadata,
+      },
+    );
 
     let unsubscribe = () => {};
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -108,14 +272,18 @@ export class StorageService {
     try {
       await new Promise<void>((resolve, reject) => {
         let settled = false;
+
         const settle = (callback: () => void): void => {
           if (settled) {
             return;
           }
+
           settled = true;
+
           if (timeoutId) {
             clearTimeout(timeoutId);
           }
+
           unsubscribe();
           callback();
         };
@@ -124,26 +292,28 @@ export class StorageService {
           settle(() =>
             reject(
               new Error(
-                'La carga de imagen superó 90 segundos. Comprueba la conexión e inténtalo de nuevo.',
+                'La carga superó 90 segundos. Comprueba tu conexión e inténtalo de nuevo.',
               ),
             ),
           );
+
           uploadTask.cancel();
         }, UPLOAD_TIMEOUT_MS);
 
         unsubscribe = uploadTask.on(
           'state_changed',
           (snapshot) => {
-            const progress: ProductImageUploadProgress = {
+            onProgress?.({
               bytesTransferred: snapshot.bytesTransferred,
               totalBytes: snapshot.totalBytes,
               percent: snapshot.totalBytes
                 ? Math.round(
-                    (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
+                    (snapshot.bytesTransferred /
+                      snapshot.totalBytes) *
+                      100,
                   )
                 : 0,
-            };
-            onProgress?.(progress);
+            });
           },
           (error: Error) => settle(() => reject(error)),
           () => settle(resolve),
@@ -151,76 +321,101 @@ export class StorageService {
       });
 
       uploadCompleted = true;
-      console.info('[StorageService] Carga de imagen completada:', {
-        catalogId,
-        sizeBytes: file.size,
-      });
 
-      const downloadUrl = await this.getDownloadUrlWithTimeout(fileReference);
-      console.info('[StorageService] URL de imagen obtenida:', { catalogId });
-      return { downloadUrl, fullPath };
-    } catch (downloadError) {
+      const downloadUrl =
+        await this.getDownloadUrlWithTimeout(fileReference);
+
+      return {
+        downloadUrl,
+        fullPath,
+      };
+    } catch (error) {
       console.error(
-        '[StorageService] Falló la carga o lectura de la imagen:',
-        this.getSafeErrorDetails(downloadError),
+        '[StorageService] Error al subir archivo:',
+        this.getSafeErrorDetails(error),
       );
 
-      if (!uploadCompleted) {
-        throw downloadError;
-      }
-
-      try {
-        await deleteObject(fileReference);
-      } catch (cleanupError) {
-        if (this.getErrorCode(cleanupError) === 'storage/object-not-found') {
-          throw downloadError;
+      if (uploadCompleted) {
+        try {
+          await deleteObject(fileReference);
+        } catch (cleanupError) {
+          console.error(
+            '[StorageService] No se pudo limpiar el archivo:',
+            this.getSafeErrorDetails(cleanupError),
+          );
         }
-        console.error(
-          '[StorageService] Falló la limpieza de la imagen sin URL descargable:',
-          this.getSafeErrorDetails(cleanupError),
-        );
-        throw new Error(
-          `No se pudo finalizar la carga de imagen (${this.describeError(downloadError)}) y tampoco limpiar el archivo nuevo (${this.describeError(cleanupError)}).`,
-        );
       }
 
-      throw downloadError;
+      throw error;
     } finally {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
+
       unsubscribe();
     }
   }
 
-  async deleteProductImage(imageUrl: string): Promise<boolean> {
-    const fullPath = this.getManagedImagePath(imageUrl);
+  // =========================================
+  // VALIDACIÓN DE TENANT Y CATÁLOGO
+  // =========================================
 
-    if (!fullPath) {
-      return false;
+  private requireTenantId(): string {
+    const tenantId = this.tenantContext.tenantId;
+
+    if (!tenantId?.trim()) {
+      throw new Error(
+        'No hay una florería activa para realizar esta operación.',
+      );
     }
 
-    await this.deleteProductImageByPath(fullPath);
-    return true;
+    return tenantId;
   }
 
-  async deleteProductImageByPath(fullPath: string): Promise<void> {
-    if (!MANAGED_IMAGE_PATH.test(fullPath)) {
-      throw new Error('La ruta de la imagen no pertenece al catálogo de productos.');
-    }
-
-    await deleteObject(ref(storage, fullPath));
-  }
-
-  private validateCatalogId(catalogId: string): asserts catalogId is CatalogId {
+  private validateCatalogId(
+    catalogId: string,
+  ): asserts catalogId is CatalogId {
     if (catalogId !== 'normal') {
-      throw new Error('El administrador solo permite operar sobre el catálogo.');
+      throw new Error(
+        'El administrador solo permite operar sobre el catálogo.',
+      );
     }
   }
 
-  private getManagedImagePath(imageUrl: string): string | null {
+  // =========================================
+  // RUTAS ADMINISTRADAS
+  // =========================================
+
+  private getManagedProductImagePath(
+    imageUrl: string,
+  ): string | null {
+    const fullPath = this.extractStoragePath(imageUrl);
+
+    return fullPath && MANAGED_PRODUCT_IMAGE_PATH.test(fullPath)
+      ? fullPath
+      : null;
+  }
+
+  private getManagedBrandingImagePath(
+    imageUrl: string,
+  ): string | null {
+    const fullPath = this.extractStoragePath(imageUrl);
+
+    if (!fullPath || !MANAGED_BRANDING_IMAGE_PATH.test(fullPath)) {
+      return null;
+    }
+
+    const tenantId = this.requireTenantId();
+
+    return fullPath.startsWith(`tenants/${tenantId}/`)
+      ? fullPath
+      : null;
+  }
+
+  private extractStoragePath(imageUrl: string): string | null {
     try {
       const url = new URL(imageUrl);
+
       if (
         url.protocol !== 'https:' ||
         url.hostname !== 'firebasestorage.googleapis.com'
@@ -229,6 +424,7 @@ export class StorageService {
       }
 
       const segments = url.pathname.split('/').filter(Boolean);
+
       if (
         segments.length < 5 ||
         segments[0] !== 'v0' ||
@@ -239,19 +435,48 @@ export class StorageService {
         return null;
       }
 
-      const fullPath = decodeURIComponent(segments.slice(4).join('/'));
-      return MANAGED_IMAGE_PATH.test(fullPath) ? fullPath : null;
+      return decodeURIComponent(segments.slice(4).join('/'));
     } catch {
       return null;
     }
   }
 
-  private describeError(error: unknown): string {
-    const message = error instanceof Error ? error.message : String(error);
-    return message.replace(
-      /(https:\/\/firebasestorage\.googleapis\.com\/[^\s?]+)\?[^\s]+/g,
-      '$1?[redacted]',
-    );
+  // =========================================
+  // UTILIDADES
+  // =========================================
+
+  private generateUniqueSuffix(): string {
+    return typeof crypto !== 'undefined' &&
+      'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  private async getDownloadUrlWithTimeout(
+    fileReference: ReturnType<typeof ref>,
+  ): Promise<string> {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    try {
+      return await Promise.race([
+        getDownloadURL(fileReference),
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(
+            () =>
+              reject(
+                new Error(
+                  'No se obtuvo la URL de descarga dentro de 30 segundos.',
+                ),
+              ),
+            DOWNLOAD_URL_TIMEOUT_MS,
+          );
+        }),
+      ]);
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
   }
 
   private getErrorCode(error: unknown): string | undefined {
@@ -273,33 +498,8 @@ export class StorageService {
   } {
     return {
       code: this.getErrorCode(error),
-      message: this.describeError(error),
+      message:
+        error instanceof Error ? error.message : String(error),
     };
-  }
-
-  private async getDownloadUrlWithTimeout(
-    fileReference: ReturnType<typeof ref>,
-  ): Promise<string> {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    try {
-      return await Promise.race([
-        getDownloadURL(fileReference),
-        new Promise<never>((_, reject) => {
-          timeoutId = setTimeout(
-            () =>
-              reject(
-                new Error(
-                  'No se obtuvo la URL de descarga dentro de 30 segundos.',
-                ),
-              ),
-            DOWNLOAD_URL_TIMEOUT_MS,
-          );
-        }),
-      ]);
-    } finally {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    }
   }
 }

@@ -424,22 +424,21 @@
                   </td>
 
                   <td class="px-4 py-2.5">
+  <span
+    class="products-status-badge"
+    [class.products-status-badge-active]="item.status === 'active'"
+    [class.products-status-badge-inactive]="item.status !== 'active'"
+    [attr.aria-label]="
+      item.status === 'active'
+        ? 'Estado: Activo'
+        : 'Estado: Agotado'
+    "
+  >
+    <span class="products-status-dot" aria-hidden="true"></span>
 
-                    <span
-
-                      class="inline-flex items-center gap-1.5 text-theme-xs font-medium"
-
-                      [ngClass]="item.status === 'active' ? 'text-success-700 dark:text-success-400' : 'text-gray-500 dark:text-gray-400'"
-
-                    >
-
-                      <span class="h-1.5 w-1.5 rounded-full" [ngClass]="item.status === 'active' ? 'bg-success-500' : 'bg-gray-400'"></span>
-
-                      {{ item.status === 'active' ? 'Activo' : 'Agotado' }}
-
-                    </span>
-
-                  </td>
+    {{ item.status === 'active' ? 'Activo' : 'Agotado' }}
+  </span>
+</td>
 
                   <td class="px-4 py-2.5">
 
