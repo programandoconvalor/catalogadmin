@@ -26,9 +26,11 @@ import { CatalogPageComponent } from './pages/catalog/catalog-page.component';
 import { ProductsComponent } from './pages/products/products.component';
 import { CategoriesComponent } from './pages/categories/categories.component';
 import { SocialNetworksComponent } from './pages/social-networks/social-networks.component';
+import { PaymentMethodsComponent } from './pages/payment-methods/payment-methods.component';
 import { BrandingComponent } from './pages/branding/branding.component';
 import { ContactComponent } from './pages/contact/contact.component';
 import { DeliveryZonesComponent } from './pages/delivery-zones/delivery-zones/delivery-zones.component';
+import { LocationComponent } from './pages/location/location.component';
 
 // AUTH
 import { authGuard } from './core/auth/auth.guard';
@@ -67,6 +69,11 @@ export const routes: Routes = [
         title: 'Redes Sociales',
       },
       {
+        path: 'catalog/payment-methods',
+        component: PaymentMethodsComponent,
+        title: 'Métodos de pago',
+      },
+      {
         path: 'catalog/contact',
         component: ContactComponent,
         title: 'Contacto',
@@ -76,7 +83,11 @@ export const routes: Routes = [
         component: DeliveryZonesComponent,
         title: 'Entregas y Envíos',
       },
-      
+      {
+        path: 'catalog/location',
+        component: LocationComponent,
+        title: 'Ubicación',
+      },
 
       // =====================================================
       // BRANDING

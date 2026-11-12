@@ -1,0 +1,147 @@
+<section class="location-page">
+  <header class="location-heading">
+    <div class="location-heading-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+        <circle cx="12" cy="10" r="2.5" />
+      </svg>
+    </div>
+    <div>
+      <h1>Ubicación</h1>
+      <p>Configura la dirección de tu florería y compártela con tus clientes.</p>
+    </div>
+  </header>
+
+  <div class="location-divider"></div>
+
+  @if (errorMessage) {
+    <div class="location-error" role="alert">
+      <span>{{ errorMessage }}</span>
+      <button type="button" (click)="loadLocation()">Reintentar</button>
+    </div>
+  }
+
+  @if (loading && !loaded) {
+    <div class="location-loading" role="status" aria-live="polite">
+      <span class="location-spinner"></span>
+      <span>Cargando ubicación...</span>
+    </div>
+  } @else if (loaded) {
+    <div class="location-intro">
+      <h2>Dirección de tu florería</h2>
+      <p>Esta información ayudará a tus clientes a encontrar tu establecimiento.</p>
+    </div>
+
+    <form class="location-layout" [formGroup]="locationForm" (ngSubmit)="saveChanges()" novalidate>
+      <section class="location-form-card">
+        <div class="location-fields">
+          <div class="location-field">
+            <label for="fullAddress">Dirección <span class="required">*</span></label>
+            <textarea
+              id="fullAddress"
+              formControlName="fullAddress"
+              rows="4"
+              maxlength="200"
+              placeholder="Ejemplo: Calle Morelos 144 Colonia Álvaro Obregón San Mateo Atenco CP 52105"
+              autocomplete="street-address"
+            ></textarea>
+            <div class="location-field-meta">
+              @if (locationForm.controls.fullAddress.touched && locationForm.controls.fullAddress.invalid) {
+                <small class="field-error">
+                  @if (locationForm.controls.fullAddress.hasError('required') || locationForm.controls.fullAddress.hasError('pattern')) {
+                    La dirección es obligatoria.
+                  } @else {
+                    La dirección no puede superar los 200 caracteres.
+                  }
+                </small>
+              } @else {
+                <small>Escribe la dirección completa tal como deseas mostrarla.</small>
+              }
+              <small class="character-count">{{ locationForm.controls.fullAddress.value.length }}/200</small>
+            </div>
+          </div>
+
+          <div class="location-field">
+            <label for="googleMapsUrl">URL de Google Maps <span class="required">*</span></label>
+            <input
+              id="googleMapsUrl"
+              type="url"
+              formControlName="googleMapsUrl"
+              maxlength="2048"
+              placeholder="Ejemplo: https://maps.google.com/?q=..."
+              autocomplete="url"
+              spellcheck="false"
+            />
+            @if (locationForm.controls.googleMapsUrl.touched && locationForm.controls.googleMapsUrl.invalid) {
+              <small class="field-error">
+                @if (locationForm.controls.googleMapsUrl.hasError('required')) {
+                  La URL de Google Maps es obligatoria.
+                } @else {
+                  Ingresa un enlace válido de Google Maps.
+                }
+              </small>
+            } @else {
+              <small class="field-hint">Pega el enlace que obtienes al compartir la ubicación desde Google Maps.</small>
+            }
+          </div>
+
+          <div class="location-status-row">
+            <div class="location-status-copy">
+              <span>Estado administrativo <b class="required">*</b></span>
+              <strong [class.status-active]="isActive" [class.status-inactive]="!isActive">
+                {{ isActive ? 'Activo' : 'Inactivo' }}
+              </strong>
+              <small>Si está inactiva, la ubicación no se mostrará en el catálogo público.</small>
+            </div>
+            <label class="location-switch" aria-label="Estado de la ubicación">
+              <input type="checkbox" formControlName="isActive" />
+              <span class="location-switch-track"></span>
+            </label>
+          </div>
+        </div>
+
+        <footer class="location-form-footer">
+          <button type="submit" class="location-save-button" [disabled]="saving || locationForm.invalid || locationForm.pristine">
+            @if (saving) {
+              <span class="button-spinner"></span>
+              Guardando...
+            } @else {
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5 8 14l8-8" /></svg>
+              Guardar cambios
+            }
+          </button>
+        </footer>
+      </section>
+
+      <aside class="location-preview-card">
+        <div class="preview-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+            <circle cx="12" cy="10" r="2.5" />
+          </svg>
+        </div>
+        <h3>Vista previa de ubicación</h3>
+        <p class="preview-description">Así podrás compartir la dirección de tu florería con tus clientes.</p>
+
+        <div class="preview-address">
+          <span class="preview-label">Dirección registrada</span>
+          <p>{{ locationForm.controls.fullAddress.value || 'Aquí aparecerá la dirección de tu florería.' }}</p>
+        </div>
+
+        @if (mapsUrl && locationForm.controls.googleMapsUrl.valid) {
+          <a class="maps-link" [href]="mapsUrl" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M11 3h6v6m0-6-8 8"/><path d="M15 11v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>
+            Abrir en Google Maps
+          </a>
+        } @else {
+          <div class="maps-link is-disabled" aria-disabled="true">Agrega tu enlace de Google Maps</div>
+        }
+
+        <div class="preview-note">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v4m0-7h.01"/></svg>
+          <span>Los enlaces cortos y los enlaces compartidos de Google Maps también son válidos.</span>
+        </div>
+      </aside>
+    </form>
+  }
+</section>

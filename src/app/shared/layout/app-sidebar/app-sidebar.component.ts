@@ -81,12 +81,12 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     },
     {
       name: 'Ubicación',
-      path: '/profile',
+       path: '/catalog/location',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/><path d="M9 3v15m6-12v15"/></svg>`,
     },
     {
       name: 'Métodos de Pago',
-      path: '/profile',
+      path: '/catalog/payment-methods',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20m-15 5h3"/></svg>`,
     },
     {
@@ -257,6 +257,8 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       '/catalog/social-networks': 'Redes Sociales',
       '/catalog/contact': 'Contacto',
       '/catalog/delivery-zones': 'Entregas y Envíos',
+      '/catalog/location': 'Ubicación',
+      '/catalog/payment-methods': 'Métodos de Pago',
     };
 
     this.activeMenuItem = routeMenuMap[cleanUrl] ?? null;

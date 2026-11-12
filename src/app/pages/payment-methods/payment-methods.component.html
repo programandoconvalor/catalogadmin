@@ -1,0 +1,173 @@
+<div class="payment-page">
+  @if (errorMessage) {
+    <div role="alert" class="payment-error">
+      <span>{{ errorMessage }}</span>
+      <button type="button" (click)="loadMethods()">Reintentar</button>
+    </div>
+  }
+
+  <section class="payment-card">
+    <header class="payment-page-header">
+      <div class="payment-heading">
+        <span class="payment-heading-icon" aria-hidden="true">$
+        </span>
+        <div>
+          <h2>Métodos de pago</h2>
+          <p>Administra los métodos de pago que se mostrarán en el catálogo de tu florería.</p>
+        </div>
+      </div>
+      <button type="button" class="payment-primary-button" (click)="openCreate()"
+        [disabled]="!canCreate || loading || !!errorMessage"
+        [title]="canCreate ? 'Nuevo método de pago' : 'Ya configuraste los 10 métodos disponibles'">
+        <span aria-hidden="true">＋</span> Nuevo método de pago
+      </button>
+    </header>
+
+    <section class="payment-toolbar" role="search" aria-label="Filtros de métodos de pago">
+      <label class="payment-search-field">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" [value]="searchTerm" (input)="onSearch($any($event.target).value)"
+          placeholder="Buscar método de pago..." aria-label="Buscar método de pago" />
+      </label>
+      <select class="payment-toolbar-select" aria-label="Filtrar por estado" [value]="statusFilter"
+        (change)="onStatus($any($event.target).value)">
+        <option value="">Todos los estados</option><option value="active">Activos</option><option value="inactive">Inactivos</option>
+      </select>
+      <select class="payment-toolbar-select" aria-label="Ordenar métodos" [value]="sortBy"
+        (change)="onSort($any($event.target).value)">
+        <option value="order">Orden personalizado</option><option value="name">Nombre</option>
+      </select>
+      <button type="button" class="payment-sort-direction" (click)="toggleSort()"
+        [attr.aria-label]="sortDirection === 'asc' ? 'Cambiar a descendente' : 'Cambiar a ascendente'">
+        {{ sortDirection === 'asc' ? '↑' : '↓' }}
+      </button>
+    </section>
+
+    @if (loading && methods.length === 0) {
+      <div class="payment-state" role="status"><span class="payment-spinner"></span><p>Cargando métodos de pago...</p></div>
+    } @else if (!errorMessage && filteredMethods.length === 0) {
+      <div class="payment-state">
+        <span class="payment-empty-icon" aria-hidden="true">¤</span>
+        <h3>{{ hasActiveFilters ? 'No encontramos métodos de pago' : 'Todavía no hay métodos de pago' }}</h3>
+        <p>{{ hasActiveFilters ? 'Prueba con otro nombre o cambia los filtros.' : 'Agrega los métodos que aceptas para mostrarlos en el catálogo.' }}</p>
+        @if (!hasActiveFilters && canCreate) {
+          <button type="button" class="payment-primary-button" (click)="openCreate()">Agregar primer método</button>
+        }
+      </div>
+    } @else if (!errorMessage) {
+      <div class="payment-table-wrap">
+        <table class="payment-table">
+          <thead><tr><th>Método de pago</th><th>Identificador</th><th>Orden</th><th>Estado</th><th class="payment-actions-heading">Acciones</th></tr></thead>
+          <tbody>
+            @for (item of paginatedMethods; track item.id) {
+              <tr>
+                <td>
+                  <div class="payment-name-cell">
+                    <span class="payment-brand" [style.--brand-color]="methodMeta(item.type).color"
+                      [class.payment-brand-mastercard]="item.type === 'mastercard'">{{ methodMeta(item.type).shortLabel }}</span>
+                    <span class="payment-name-copy"><strong>{{ item.name }}</strong><small>{{ methodMeta(item.type).description }}</small></span>
+                  </div>
+                </td>
+                <td><code class="payment-type">{{ item.type }}</code></td>
+                <td><span class="payment-order">{{ item.sortOrder }}</span></td>
+                <td><span class="payment-status" [class.is-active]="item.isActive" [class.is-inactive]="!item.isActive"><span></span>{{ item.isActive ? 'Activo' : 'Inactivo' }}</span></td>
+                <td><div class="payment-actions">
+                  <button type="button" class="payment-row-action edit" (click)="openEdit(item)" title="Editar" aria-label="Editar método de pago">
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m10.8 2.2 3 3M2 14l3.2-.7L13.5 5a1.4 1.4 0 0 0-2-2l-8.3 8.3L2 14Z"/></svg><span>Editar</span>
+                  </button>
+                  <button type="button" class="payment-row-action delete" (click)="requestDeletion(item)" title="Eliminar" aria-label="Eliminar método de pago">
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 4h11M6 4V2.5h4V4m-6.5 0 .7 9.5h7.6l.7-9.5M6.5 7v4m3-4v4"/></svg><span>Eliminar</span>
+                  </button>
+                </div></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (!errorMessage) {
+      <footer class="payment-list-footer">
+        <p>Mostrando <strong>{{ firstVisibleItem }}–{{ lastVisibleItem }}</strong> de <strong>{{ filteredMethods.length }}</strong> métodos de pago</p>
+        <div class="payment-pagination-controls">
+          <span>{{ methods.length }} configurado{{ methods.length === 1 ? '' : 's' }}</span>
+          @if (filteredMethods.length > 0) {
+            <label class="payment-page-size-label">Por página
+              <select class="payment-page-size" [value]="pageSize" (change)="onPageSize($any($event.target).value)">
+                @for (size of pageSizeOptions; track size) { <option [value]="size">{{ size }}</option> }
+              </select>
+            </label>
+            <button type="button" class="payment-page-button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">Anterior</button>
+            <span class="payment-page-indicator">Página {{ currentPage }} de {{ totalPages }}</span>
+            <button type="button" class="payment-page-button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages">Siguiente</button>
+          }
+        </div>
+      </footer>
+    }
+  </section>
+</div>
+
+<app-modal [isOpen]="modalOpen" [showCloseButton]="!saving" position="center"
+  backdropClassName="bg-gray-950/55 backdrop-blur-[2px]" className="payment-dialog max-w-[560px] p-0"
+  (close)="closeModal()">
+  <form [formGroup]="paymentForm" (ngSubmit)="saveMethod()" class="payment-form">
+    <header class="payment-form-header">
+      <span class="payment-brand payment-form-brand" [style.--brand-color]="methodMeta(paymentForm.controls.type.value).color">
+        {{ methodMeta(paymentForm.controls.type.value).shortLabel }}
+      </span>
+      <div><span class="payment-eyebrow">CATÁLOGO</span>
+        <h2>{{ editingId ? 'Editar método de pago' : 'Agregar método de pago' }}</h2>
+        <p>Configura cómo podrán identificar este método tus clientes.</p>
+      </div>
+    </header>
+    <div class="payment-form-fields">
+      <label class="payment-input-group"><span>Método de pago <b>*</b></span>
+        <select formControlName="type" (change)="onTypeChange()">
+          @for (option of availableOptions; track option.id) { <option [value]="option.id">{{ option.label }}</option> }
+        </select>
+        @if (paymentForm.controls.type.touched && paymentForm.controls.type.hasError('duplicateType')) { <em>Este método ya está configurado.</em> }
+      </label>
+      <label class="payment-input-group"><span>Nombre visible <b>*</b></span>
+        <input type="text" formControlName="name" maxlength="80" placeholder="Ej. Visa" />
+        @if (paymentForm.controls.name.touched && paymentForm.controls.name.hasError('required')) { <em>El nombre es obligatorio.</em> }
+        @else { <small>Este nombre se mostrará en el catálogo público.</small> }
+      </label>
+      <label class="payment-input-group"><span>Orden de visualización <b>*</b></span>
+        <input type="number" min="1" step="1" formControlName="sortOrder" />
+        @if (paymentForm.controls.sortOrder.touched && paymentForm.controls.sortOrder.hasError('duplicateOrder')) { <em>Este orden ya está asignado a otro método.</em> }
+        @else if (paymentForm.controls.sortOrder.touched && (paymentForm.controls.sortOrder.hasError('min') || paymentForm.controls.sortOrder.hasError('wholeNumber'))) { <em>El orden debe ser un entero mayor o igual a 1.</em> }
+      </label>
+      <div class="payment-status-field">
+        <div class="payment-status-copy"><span>Estado administrativo <b>*</b></span>
+          <strong>{{ paymentForm.controls.isActive.value ? 'Activo' : 'Inactivo' }}</strong>
+          <small>Los métodos inactivos no se mostrarán en el catálogo público.</small>
+        </div>
+        <label class="payment-switch" aria-label="Estado del método de pago">
+          <input type="checkbox" formControlName="isActive" role="switch" /><span></span>
+        </label>
+      </div>
+    </div>
+    <footer class="payment-form-footer">
+      <button type="button" class="payment-cancel-button" (click)="closeModal()" [disabled]="saving">Cancelar</button>
+      <button type="submit" class="payment-save-button" [disabled]="paymentForm.invalid || saving">
+        {{ saving ? 'Guardando...' : (editingId ? 'Guardar cambios' : 'Agregar método') }}
+      </button>
+    </footer>
+  </form>
+</app-modal>
+
+<app-modal [isOpen]="pendingDeletion !== null" [showCloseButton]="!deleting" position="center"
+  backdropClassName="bg-gray-950/55 backdrop-blur-[2px]" className="payment-dialog max-w-[500px] p-0"
+  (close)="pendingDeletion = null">
+  <section class="payment-form">
+    <header class="payment-form-header"><span class="payment-delete-icon">!</span>
+      <div><span class="payment-eyebrow">CONFIRMACIÓN</span><h2>Eliminar método de pago</h2>
+        <p>Este método dejará de mostrarse en el catálogo público.</p></div>
+    </header>
+    <div class="payment-form-fields"><div class="payment-delete-warning">¿Estás seguro de eliminar <strong>{{ pendingDeletion?.name }}</strong>?</div></div>
+    <footer class="payment-form-footer">
+      <button type="button" class="payment-cancel-button" (click)="pendingDeletion = null" [disabled]="deleting">Cancelar</button>
+      <button type="button" class="payment-delete-button" (click)="confirmDeletion()" [disabled]="deleting">{{ deleting ? 'Eliminando...' : 'Sí, eliminar' }}</button>
+    </footer>
+  </section>
+</app-modal>
