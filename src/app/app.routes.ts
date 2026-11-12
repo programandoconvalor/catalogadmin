@@ -31,6 +31,7 @@ import { BrandingComponent } from './pages/branding/branding.component';
 import { ContactComponent } from './pages/contact/contact.component';
 import { DeliveryZonesComponent } from './pages/delivery-zones/delivery-zones/delivery-zones.component';
 import { LocationComponent } from './pages/location/location.component';
+import { ConfigurationComponent } from './pages/configuration/configuration.component';
 
 // AUTH
 import { authGuard } from './core/auth/auth.guard';
@@ -87,6 +88,11 @@ export const routes: Routes = [
         path: 'catalog/location',
         component: LocationComponent,
         title: 'Ubicación',
+      },
+      {
+        path: 'catalog/configuration',
+        component: ConfigurationComponent,
+        title: 'Configuración',
       },
 
       // =====================================================

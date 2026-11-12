@@ -1,0 +1,217 @@
+
+<section class="catalog-preview-panel">
+  <!-- ENCABEZADO DE LA VISTA PREVIA -->
+  <header class="catalog-preview-header">
+    <span class="catalog-preview-header-icon">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"
+          stroke="currentColor"
+          stroke-width="1.8"
+        />
+        <circle
+          cx="12"
+          cy="12"
+          r="3"
+          stroke="currentColor"
+          stroke-width="1.8"
+        />
+      </svg>
+    </span>
+
+    <div>
+      <h3>Vista previa del catálogo</h3>
+      <p>Así verán tus clientes tu catálogo público.</p>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="catalog-preview-state">
+      <span class="catalog-preview-spinner"></span>
+      <p>Cargando catálogo...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="catalog-preview-error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="retry()">
+        Reintentar
+      </button>
+    </div>
+  } @else {
+    <!-- CUERPO DEL TELÉFONO -->
+    <div class="catalog-phone">
+      <div class="catalog-phone-frame">
+        <div class="catalog-phone-screen">
+
+          <!-- CÁPSULA SUPERIOR -->
+          <div class="catalog-phone-notch">
+            <span></span>
+          </div>
+
+          <div class="catalog-storefront">
+
+            <!-- HEADER DEL CATÁLOGO -->
+            <header class="storefront-header">
+              <div class="storefront-brand">
+                <div class="storefront-logo">
+                  @if (identity()?.logoUrl) {
+                    <img
+                      [src]="identity()!.logoUrl"
+                      [alt]="'Logo de ' + storeName()"
+                    />
+                  } @else {
+                    <span class="storefront-logo-placeholder">
+                      CF
+                    </span>
+                  }
+                </div>
+
+                <div class="storefront-brand-copy">
+                  <span class="storefront-overline">
+                    FLORERÍA
+                  </span>
+                  <strong>{{ storeName() }}</strong>
+                </div>
+              </div>
+
+              @if (tagline()) {
+                <p class="storefront-tagline">
+                  {{ tagline() }}
+                </p>
+              }
+            </header>
+
+            <!-- CATEGORÍAS -->
+            <section class="storefront-categories">
+              <h4>Colecciones</h4>
+
+              <div class="storefront-category-list">
+                <span class="storefront-category active">
+                  <span>☆</span>
+                  TODOS
+                </span>
+
+                @for (category of categories(); track category.id) {
+                  <span class="storefront-category">
+                    {{ category.name }}
+                  </span>
+                }
+              </div>
+
+              <small class="storefront-category-hint">
+                Desliza para ver más categorías →
+              </small>
+            </section>
+
+            <!-- BUSCADOR -->
+            @if (settings().showSearch) {
+              <div class="storefront-search">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle
+                    cx="10.8"
+                    cy="10.8"
+                    r="6.8"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                  />
+                  <path
+                    d="m16 16 5 5"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                </svg>
+
+                <span>Buscar producto...</span>
+              </div>
+            }
+
+            <!-- PRODUCTOS -->
+            <section class="storefront-products">
+              @if (products().length > 0) {
+                <div class="storefront-product-grid">
+                  @for (product of products(); track product.id) {
+                    <article class="storefront-product-card">
+
+                      <div class="storefront-product-image">
+                        <img
+                          [src]="product.imageUrl"
+                          [alt]="product.name"
+                          loading="lazy"
+                        />
+
+                        @if (settings().showProductCode && product.code) {
+                          <span class="storefront-product-code">
+                            {{ product.code }}
+                          </span>
+                        }
+                      </div>
+
+                      <div class="storefront-product-info">
+                        <h5>{{ product.name }}</h5>
+
+                        <strong class="storefront-product-price">
+                          {{ formatPrice(product.price) }}
+                        </strong>
+
+                        <div class="storefront-product-actions">
+                          <button
+                            type="button"
+                            class="storefront-add-button"
+                            aria-label="Agregar producto"
+                            [style.background-color]="settings().primaryColor"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          class="storefront-whatsapp-button"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path
+                              d="M20 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.2A8.5 8.5 0 1 1 20 11.5Z"
+                              stroke="currentColor"
+                              stroke-width="1.7"
+                              stroke-linejoin="round"
+                            />
+                            <path
+                              d="M8.5 8.1c.3-.5.6-.5.9-.5h.5c.2 0 .4.1.5.4l.8 1.8c.1.2.1.4-.1.6l-.6.7c-.2.2-.2.4-.1.6.5.9 1.2 1.6 2.1 2.1.2.1.4.1.6-.1l.8-.9c.2-.2.4-.2.6-.1l1.7.8c.3.1.4.3.4.5 0 .3-.1.9-.5 1.3-.4.5-1.1.7-1.8.6-1.2-.2-2.5-.8-3.8-2-1.1-1-1.9-2.3-2.1-3.3-.2-.9.1-1.7.6-2.5Z"
+                              fill="currentColor"
+                            />
+                          </svg>
+                          PEDIR POR WHATSAPP
+                        </button>
+                      </div>
+                    </article>
+                  }
+                </div>
+              } @else {
+                <div class="storefront-empty">
+                  <span>🌸</span>
+                  <strong>Aún no hay productos para mostrar</strong>
+                  <p>Los productos activos aparecerán aquí.</p>
+                </div>
+              }
+            </section>
+
+            <!-- FOOTER DEL CATÁLOGO -->
+            <footer class="storefront-footer">
+              <strong>{{ storeName() }}</strong>
+              <p>{{ tagline() }}</p>
+
+              <div class="storefront-social-links">
+                <span>⌖</span>
+                <span>◉</span>
+                <span>f</span>
+                <span>◎</span>
+              </div>
+            </footer>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</section>

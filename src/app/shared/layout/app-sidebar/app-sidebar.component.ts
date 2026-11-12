@@ -91,7 +91,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
     },
     {
       name: 'Configuración',
-      path: '/profile',
+      path: '/catalog/configuration',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.6-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.6 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2Z"/></svg>`,
     },
   ];
@@ -248,7 +248,12 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
    * No existe lógica de submenús.
    */
   private setActiveMenuFromRoute(currentUrl: string): void {
-    const cleanUrl = currentUrl.split('?')[0].split('#')[0];
+    // Elimina query params, fragmentos y la diagonal final para
+    // mantener el enlace activo incluso al entrar directamente a la ruta.
+    const cleanUrl = currentUrl
+      .split('?')[0]
+      .split('#')[0]
+      .replace(/\/+$/, '') || '/';
 
     const routeMenuMap: Record<string, string> = {
       '/catalog/branding': 'Logo y Nombre',
@@ -259,6 +264,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
       '/catalog/delivery-zones': 'Entregas y Envíos',
       '/catalog/location': 'Ubicación',
       '/catalog/payment-methods': 'Métodos de Pago',
+      '/catalog/configuration': 'Configuración',
     };
 
     this.activeMenuItem = routeMenuMap[cleanUrl] ?? null;

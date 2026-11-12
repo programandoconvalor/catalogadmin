@@ -22,10 +22,16 @@ import type {
 } from '../../core/models/branding-identity.model';
 import { NotificationService } from '../../core/notifications/notification.service';
 
+import { CatalogPreviewComponent } from '../../shared/components/catalog-preview/catalog-preview.component';
+
 @Component({
   selector: 'app-branding',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    CatalogPreviewComponent,
+  ],
   templateUrl: './branding.component.html',
   styleUrl: './branding.component.css',
 })
